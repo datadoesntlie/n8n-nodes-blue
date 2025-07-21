@@ -13,7 +13,7 @@ export class blue implements INodeType {
 	description: INodeTypeDescription = {
 		displayName: 'Blue',
 		name: 'blue',
-		icon: 'file:blue.svg', // SVG is preferred over PNG
+		icon: 'file:blue.svg',
 		group: ['transform'],
 		version: 1,
 		description: 'Interact with Blue Project Management via GraphQL API',
@@ -190,19 +190,32 @@ export class blue implements INodeType {
 					
 					case 'getProjects':
 						const companyIdForProjects = this.getNodeParameter('companyId', i) as string;
-						query = `query GetProjects($companyId: String!) {
-							projectList(filter: { companyIds: [$companyId] }) {
+						query = `query FilteredProjectList {
+							projectList(
+								filter: {
+									companyIds: ["${companyIdForProjects}"]
+									archived: false
+									isTemplate: false
+								}
+								sort: [position_ASC, name_ASC]
+								skip: 0
+								take: 50
+							) {
 								items {
 									id
 									name
-									description
-									status
-									createdAt
-									updatedAt
+									slug
+									position
+									archived
+								}
+								totalCount
+								pageInfo {
+									totalItems
+									hasNextPage
 								}
 							}
 						}`;
-						variables = { companyId: companyIdForProjects };
+						variables = {};
 						break;
 					
 					case 'getTasks':
