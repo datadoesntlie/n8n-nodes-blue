@@ -15,6 +15,7 @@ export interface BlueRequestOptions {
 		'Content-Type': string;
 		'User-Agent': string;
 		'X-Bloo-Company-ID'?: string;
+		'X-Bloo-Project-ID'?: string;
 	};
 	body: {
 		query: string;
@@ -48,6 +49,7 @@ export abstract class BaseBlueOperation {
 		query: string,
 		variables: IDataObject = {},
 		companyId?: string,
+		projectId?: string,
 	): Promise<any> {
 		const requestOptions: BlueRequestOptions = {
 			method: 'POST',
@@ -68,6 +70,10 @@ export abstract class BaseBlueOperation {
 
 		if (companyId) {
 			requestOptions.headers['X-Bloo-Company-ID'] = companyId;
+		}
+
+		if (projectId) {
+			requestOptions.headers['X-Bloo-Project-ID'] = projectId;
 		}
 
 		return await context.executeFunctions.helpers.request(requestOptions);
