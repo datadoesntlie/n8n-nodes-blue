@@ -13,6 +13,7 @@ export class blueapi implements ICredentialType {
 			displayName: 'Token ID',
 			name: 'tokenId',
 			type: 'string',
+			typeOptions: { password: true },
 			default: '',
 			required: true,
 			description: 'Your Blue API Token ID (X-Bloo-Token-ID)',

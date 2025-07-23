@@ -9,6 +9,9 @@ import {
 	NodeOperationError,
 } from 'n8n-workflow';
 
+import { operations } from './operations';
+import { BlueCredentials, BlueOperationContext } from './types';
+
 export class blue implements INodeType {
 	description: INodeTypeDescription = {
 		displayName: 'Blue',
@@ -53,21 +56,25 @@ export class blue implements INodeType {
 						name: 'Get Companies',
 						value: 'getCompanies',
 						description: 'List all companies you have access to',
+						action: 'List all companies you have access to',
 					},
 					{
 						name: 'Custom Query',
 						value: 'customQuery',
 						description: 'Execute a custom GraphQL query',
+						action: 'Execute a custom graph ql query',
 					},
 					{
 						name: 'Get Projects',
 						value: 'getProjects',
 						description: 'Retrieve all projects',
+						action: 'Retrieve all projects',
 					},
 					{
-						name: 'Get Tasks',
-						value: 'getTasks',
-						description: 'Retrieve tasks for a project',
+						name: 'Get Records',
+						value: 'getRecords',
+						description: 'Retrieve records (todos/tasks) with advanced filtering',
+						action: 'Retrieve records todos tasks with advanced filtering',
 					},
 				],
 				default: 'getCompanies',
@@ -107,19 +114,74 @@ export class blue implements INodeType {
 				default: '{}',
 				description: 'Variables to pass to the query as JSON object',
 			},
-			// Get Tasks Section
+			// Get Records Section
 			{
 				displayName: 'Project ID',
 				name: 'projectId',
 				type: 'string',
 				displayOptions: {
 					show: {
-						operation: ['getTasks'],
+						operation: ['getRecords'],
 					},
 				},
 				default: '',
-				description: 'ID of the project to get tasks from',
-				required: true,
+				description: 'ID of the project to filter records from (optional)',
+				placeholder: 'e.g., crm-113',
+			},
+			{
+				displayName: 'Search Term',
+				name: 'searchTerm',
+				type: 'string',
+				displayOptions: {
+					show: {
+						operation: ['getRecords'],
+					},
+				},
+				default: '',
+				description: 'Search for records containing this text (optional)',
+				placeholder: 'e.g., Halaxy Create Patient',
+			},
+			{
+				displayName: 'Show Completed',
+				name: 'showCompleted',
+				type: 'boolean',
+				displayOptions: {
+					show: {
+						operation: ['getRecords'],
+					},
+				},
+				default: false,
+				description: 'Whether to include completed records in results',
+			},
+			{
+				displayName: 'Limit',
+				name: 'limit',
+				type: 'number',
+				displayOptions: {
+					show: {
+						operation: ['getRecords'],
+					},
+				},
+				default: 50,
+				typeOptions: {
+					minValue: 1,
+				},
+				description: 'Max number of results to return',
+			},
+			{
+				displayName: 'Skip',
+				name: 'skip',
+				type: 'number',
+				displayOptions: {
+					show: {
+						operation: ['getRecords'],
+					},
+				},
+				default: 0,
+				typeOptions: {
+					minValue: 0,
+				},
+				description: 'Number of records to skip (for pagination)',
 			},
 			// Common Options
 			{
@@ -130,7 +192,7 @@ export class blue implements INodeType {
 				default: {},
 				options: [
 					{
-						displayName: 'Timeout (ms)',
+						displayName: 'Timeout (Ms)',
 						name: 'timeout',
 						type: 'number',
 						default: 30000,
@@ -141,7 +203,7 @@ export class blue implements INodeType {
 						name: 'fullResponse',
 						type: 'boolean',
 						default: false,
-						description: 'Return the full GraphQL response including errors and extensions',
+						description: 'Whether to return the full GraphQL response including errors and extensions',
 					},
 				],
 			},
@@ -156,154 +218,43 @@ export class blue implements INodeType {
 			try {
 				const operation = this.getNodeParameter('operation', i) as string;
 				const additionalOptions = this.getNodeParameter('additionalOptions', i) as IDataObject;
-				
-				// Company ID is not needed for getCompanies operation
-				let companyId = '';
-				if (operation !== 'getCompanies') {
-					companyId = this.getNodeParameter('companyId', i) as string;
-				}
-				const credentials = await this.getCredentials('blueApi');
+				const credentials = await this.getCredentials('blueApi') as BlueCredentials;
 
-				let query: string;
-				let variables: IDataObject = {};
-
-				// Build query based on operation
-				switch (operation) {
-					case 'getCompanies':
-						query = `query GetCompanies {
-							companyList {
-								items {
-									id
-									name
-									slug
-									description
-									createdAt
-								}
-							}
-						}`;
-						break;
-					
-					case 'customQuery':
-						query = this.getNodeParameter('query', i) as string;
-						variables = this.getNodeParameter('variables', i) as IDataObject;
-						break;
-					
-					case 'getProjects':
-						const companyIdForProjects = this.getNodeParameter('companyId', i) as string;
-						query = `query FilteredProjectList {
-							projectList(
-								filter: {
-									companyIds: ["${companyIdForProjects}"]
-									archived: false
-									isTemplate: false
-								}
-								sort: [position_ASC, name_ASC]
-								skip: 0
-								take: 50
-							) {
-								items {
-									id
-									name
-									slug
-									position
-									archived
-								}
-								totalCount
-								pageInfo {
-									totalItems
-									hasNextPage
-								}
-							}
-						}`;
-						variables = {};
-						break;
-					
-					case 'getTasks':
-						const projectId = this.getNodeParameter('projectId', i) as string;
-						const companyIdForTasks = this.getNodeParameter('companyId', i) as string;
-						query = `query GetTasks($projectId: ID!, $companyId: String!) {
-							project(id: $projectId) {
-								id
-								name
-								todos: todoQueries {
-									todos(filter: { 
-										projectIds: [$projectId], 
-										companyIds: [$companyId] 
-									}) {
-										items {
-											id
-											title
-											description
-											status
-											assignee {
-												id
-												name
-											}
-											createdAt
-											updatedAt
-										}
-									}
-								}
-							}
-						}`;
-						variables = { projectId, companyId: companyIdForTasks };
-						break;
-					
-					default:
-						throw new NodeOperationError(this.getNode(), `Unknown operation: ${operation}`);
+				// Get the operation handler
+				const operationHandler = operations[operation];
+				if (!operationHandler) {
+					throw new NodeOperationError(this.getNode(), `Unknown operation: ${operation}`);
 				}
 
-				// Validate query
-				if (!query || query.trim() === '') {
-					throw new NodeOperationError(this.getNode(), 'GraphQL query cannot be empty');
-				}
-
-				// Prepare request options
-				const requestOptions: any = {
-					method: 'POST' as const,
-					url: 'https://api.blue.cc/graphql',
-					headers: {
-						'X-Bloo-Token-ID': credentials.tokenId as string,
-						'X-Bloo-Token-Secret': credentials.tokenSecret as string,
-						'Content-Type': 'application/json',
-						'User-Agent': 'n8n-blue-node/1.0',
-					},
-					body: {
-						query: query.trim(),
-						variables,
-					},
-					json: true,
-					timeout: (additionalOptions.timeout as number) || 30000,
+				// Create operation context
+				const context: BlueOperationContext = {
+					executeFunctions: this,
+					itemIndex: i,
+					credentials,
+					additionalOptions,
 				};
 
-				// Add company header only if companyId is provided
-				if (companyId) {
-					requestOptions.headers['X-Bloo-Company-ID'] = companyId;
-				}
+				// Execute the operation
+				const result = await operationHandler.execute(context);
 
-				const response = await this.helpers.request(requestOptions);
-
-				// Handle GraphQL errors
-				if (response.errors && response.errors.length > 0) {
-					const errorMessage = response.errors.map((err: any) => err.message).join(', ');
-					throw new NodeApiError(this.getNode(), {
-						message: `GraphQL Error: ${errorMessage}`,
-						description: 'The GraphQL query returned errors',
+				if (result.success) {
+					returnData.push({
+						json: result.data,
+						pairedItem: { item: i },
 					});
-				}
-
-				// Process response based on user preference
-				let responseData;
-				if (additionalOptions.fullResponse) {
-					responseData = response;
 				} else {
-					responseData = response.data || response;
+					if (this.continueOnFail()) {
+						returnData.push({
+							json: { error: result.error },
+							pairedItem: { item: i },
+						});
+					} else {
+						throw new NodeApiError(this.getNode(), {
+							message: result.error || 'Unknown error',
+							description: `An error occurred while executing the ${operation} operation`,
+						});
+					}
 				}
-
-				returnData.push({
-					json: responseData,
-					pairedItem: { item: i },
-				});
 
 			} catch (error) {
 				if (this.continueOnFail()) {
