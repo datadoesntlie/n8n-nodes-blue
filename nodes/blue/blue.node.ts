@@ -5,6 +5,7 @@ import {
 	INodeExecutionData,
 	INodeListSearchItems,
 	INodeListSearchResult,
+	INodePropertyOptions,
 	INodeType,
 	INodeTypeDescription,
 	NodeApiError,
@@ -41,7 +42,7 @@ export class blue implements INodeType {
 				type: 'string',
 				displayOptions: {
 					hide: {
-						operation: ['getCompanies', 'updateRecord'],
+						operation: ['getCompanies', 'updateRecord', 'createRecord', 'createProject'],
 					},
 				},
 				default: '',
@@ -84,6 +85,18 @@ export class blue implements INodeType {
 						value: 'updateRecord',
 						description: 'Update a record (todo/task) with custom fields',
 						action: 'Update a record todo task with custom fields',
+					},
+					{
+						name: 'Create Record',
+						value: 'createRecord',
+						description: 'Create a new record (todo/task) with custom fields',
+						action: 'Create a new record todo task with custom fields',
+					},
+					{
+						name: 'Create Project',
+						value: 'createProject',
+						description: 'Create a new project from a template',
+						action: 'Create a new project from a template',
 					},
 				],
 				default: 'getCompanies',
@@ -588,6 +601,387 @@ export class blue implements INodeType {
 				],
 				description: 'Custom fields to update for this record',
 			},
+			// Create Record Section  
+			{
+				displayName: 'Company',
+				name: 'companyId',
+				type: 'resourceLocator',
+				default: { mode: 'list', value: '' },
+				displayOptions: {
+					show: {
+						operation: ['createRecord'],
+					},
+				},
+				required: true,
+				description: 'Company where the record will be created',
+				modes: [
+					{
+						displayName: 'From List',
+						name: 'list',
+						type: 'list',
+						placeholder: 'Select a company...',
+						typeOptions: {
+							searchListMethod: 'searchCompanies',
+							searchable: true,
+						},
+					},
+					{
+						displayName: 'By ID',
+						name: 'id',
+						type: 'string',
+						validation: [
+							{
+								type: 'regex',
+								properties: {
+									regex: '.+',
+									errorMessage: 'Company ID cannot be empty',
+								},
+							},
+						],
+					},
+				],
+			},
+			{
+				displayName: 'Project',
+				name: 'projectId',
+				type: 'resourceLocator',
+				default: { mode: 'list', value: '' },
+				displayOptions: {
+					show: {
+						operation: ['createRecord'],
+					},
+				},
+				required: true,
+				description: 'Project where the record will be created',
+				modes: [
+					{
+						displayName: 'From List',
+						name: 'list',
+						type: 'list',
+						placeholder: 'Select a project...',
+						typeOptions: {
+							searchListMethod: 'searchProjects',
+							searchable: true,
+						},
+					},
+					{
+						displayName: 'By ID',
+						name: 'id',
+						type: 'string',
+						validation: [
+							{
+								type: 'regex',
+								properties: {
+									regex: '.+',
+									errorMessage: 'Project ID cannot be empty',
+								},
+							},
+						],
+					},
+				],
+			},
+			{
+				displayName: 'Todo List',
+				name: 'todoListId',
+				type: 'resourceLocator',
+				default: { mode: 'list', value: '' },
+				displayOptions: {
+					show: {
+						operation: ['createRecord'],
+					},
+				},
+				required: true,
+				description: 'Todo list where the record will be created',
+				modes: [
+					{
+						displayName: 'From List',
+						name: 'list',
+						type: 'list',
+						placeholder: 'Select a todo list...',
+						typeOptions: {
+							searchListMethod: 'searchTodoLists',
+							searchable: true,
+						},
+					},
+					{
+						displayName: 'By ID',
+						name: 'id',
+						type: 'string',
+						validation: [
+							{
+								type: 'regex',
+								properties: {
+									regex: '.+',
+									errorMessage: 'Todo List ID cannot be empty',
+								},
+							},
+						],
+					},
+				],
+			},
+			{
+				displayName: 'Title',
+				name: 'title',
+				type: 'string',
+				displayOptions: {
+					show: {
+						operation: ['createRecord'],
+					},
+				},
+				default: '',
+				required: true,
+				description: 'Title of the record',
+			},
+			{
+				displayName: 'Description',
+				name: 'description',
+				type: 'string',
+				typeOptions: {
+					rows: 3,
+				},
+				displayOptions: {
+					show: {
+						operation: ['createRecord'],
+					},
+				},
+				default: '',
+				description: 'Description/text content of the record (optional)',
+			},
+			{
+				displayName: 'Start Date',
+				name: 'startDate',
+				type: 'dateTime',
+				displayOptions: {
+					show: {
+						operation: ['createRecord'],
+					},
+				},
+				default: '',
+				description: 'Start date for the record (optional)',
+			},
+			{
+				displayName: 'Due Date',
+				name: 'dueDate',
+				type: 'dateTime',
+				displayOptions: {
+					show: {
+						operation: ['createRecord'],
+					},
+				},
+				default: '',
+				description: 'Due date for the record (optional)',
+			},
+			{
+				displayName: 'Placement',
+				name: 'placement',
+				type: 'options',
+				displayOptions: {
+					show: {
+						operation: ['createRecord'],
+					},
+				},
+				options: [
+					{ name: 'Top', value: 'TOP' },
+					{ name: 'Bottom', value: 'BOTTOM' },
+				],
+				default: 'BOTTOM',
+				description: 'Where to place the record in the list',
+			},
+			{
+				displayName: 'Notify Assignees',
+				name: 'notify',
+				type: 'boolean',
+				displayOptions: {
+					show: {
+						operation: ['createRecord'],
+					},
+				},
+				default: false,
+				description: 'Whether to notify assignees about this record',
+			},
+			{
+				displayName: 'Assignee Names or IDs',
+				name: 'assigneeIds',
+				type: 'multiOptions',
+				displayOptions: {
+					show: {
+						operation: ['createRecord'],
+					},
+				},
+				default: [],
+				description: 'Users to assign to this record. Choose from the list, or specify IDs using an <a href="https://docs.n8n.io/code/expressions/">expression</a>.',
+				typeOptions: {
+					loadOptionsMethod: 'getProjectUsers',
+				},
+			},
+			{
+				displayName: 'Tag Names or IDs',
+				name: 'tagIds',
+				type: 'multiOptions',
+				displayOptions: {
+					show: {
+						operation: ['createRecord'],
+					},
+				},
+				default: [],
+				description: 'Tags to add to this record. Choose from the list, or specify IDs using an <a href="https://docs.n8n.io/code/expressions/">expression</a>.',
+				typeOptions: {
+					loadOptionsMethod: 'getProjectTags',
+				},
+			},
+			{
+				displayName: 'Custom Fields',
+				name: 'customFields',
+				type: 'fixedCollection',
+				placeholder: 'Add Custom Field',
+				displayOptions: {
+					show: {
+						operation: ['createRecord'],
+					},
+				},
+				default: {},
+				typeOptions: {
+					multipleValues: true,
+				},
+				options: [
+					{
+						name: 'customField',
+						displayName: 'Custom Field',
+						values: [
+							{
+								displayName: 'Custom Field Name or ID',
+								name: 'customFieldId',
+								type: 'options',
+								default: '',
+								required: true,
+								description: 'Select the custom field to set. Choose from the list, or specify an ID using an <a href="https://docs.n8n.io/code/expressions/">expression</a>.',
+								typeOptions: {
+									loadOptionsMethod: 'getCustomFields',
+								},
+							},
+							{
+								displayName: 'Value',
+								name: 'value',
+								type: 'string',
+								default: '',
+								required: true,
+								description: 'Value for the custom field',
+							},
+						],
+					},
+				],
+				description: 'Custom fields to set for this record',
+			},
+			{
+				displayName: 'Checklists',
+				name: 'checklists',
+				type: 'fixedCollection',
+				placeholder: 'Add Checklist',
+				displayOptions: {
+					show: {
+						operation: ['createRecord'],
+					},
+				},
+				default: {},
+				typeOptions: {
+					multipleValues: true,
+				},
+				options: [
+					{
+						name: 'checklist',
+						displayName: 'Checklist',
+						values: [
+							{
+								displayName: 'Title',
+								name: 'title',
+								type: 'string',
+								default: '',
+								required: true,
+								description: 'Title of the checklist',
+							},
+							{
+								displayName: 'Position',
+								name: 'position',
+								type: 'number',
+								default: 1,
+								description: 'Position of the checklist',
+							},
+						],
+					},
+				],
+				description: 'Checklists to create for this record',
+			},
+			// Create Project Section
+			{
+				displayName: 'Company',
+				name: 'companyId',
+				type: 'resourceLocator',
+				default: { mode: 'list', value: '' },
+				displayOptions: {
+					show: {
+						operation: ['createProject'],
+					},
+				},
+				required: true,
+				description: 'Company where the project will be created',
+				modes: [
+					{
+						displayName: 'From List',
+						name: 'list',
+						type: 'list',
+						placeholder: 'Select a company...',
+						typeOptions: {
+							searchListMethod: 'searchCompanies',
+							searchable: true,
+						},
+					},
+					{
+						displayName: 'By ID',
+						name: 'id',
+						type: 'string',
+						validation: [
+							{
+								type: 'regex',
+								properties: {
+									regex: '.+',
+									errorMessage: 'Company ID cannot be empty',
+								},
+							},
+						],
+					},
+				],
+			},
+			{
+				displayName: 'Project Name',
+				name: 'name',
+				type: 'string',
+				displayOptions: {
+					show: {
+						operation: ['createProject'],
+					},
+				},
+				default: '',
+				required: true,
+				description: 'Name of the new project',
+				placeholder: 'My New Project',
+			},
+			{
+				displayName: 'Template Name or ID',
+				name: 'templateId',
+				type: 'options',
+				displayOptions: {
+					show: {
+						operation: ['createProject'],
+					},
+				},
+				default: '',
+				required: true,
+				description: 'Template to use for creating the project. Choose from the list, or specify an ID using an <a href="https://docs.n8n.io/code/expressions/">expression</a>.',
+				typeOptions: {
+					loadOptionsMethod: 'getProjectTemplates',
+					loadOptionsDependsOn: ['companyId'],
+				},
+			},
 			// Common Options
 			{
 				displayName: 'Additional Options',
@@ -620,6 +1014,15 @@ export class blue implements INodeType {
 			searchCompanies: this.searchCompanies,
 			searchProjects: this.searchProjects,
 			searchTodoLists: this.searchTodoLists,
+			searchProjectUsers: this.searchProjectUsers,
+			searchProjectTags: this.searchProjectTags,
+			searchCustomFields: this.searchCustomFields,
+		},
+		loadOptions: {
+			getProjectUsers: this.getProjectUsers,
+			getProjectTags: this.getProjectTags,
+			getCustomFields: this.getCustomFields,
+			getProjectTemplates: this.getProjectTemplates,
 		},
 	};
 
@@ -949,6 +1352,630 @@ export class blue implements INodeType {
 					value: '',
 				}]
 			};
+		}
+	}
+
+	async searchProjectUsers(this: ILoadOptionsFunctions, filter?: string): Promise<INodeListSearchResult> {
+		try {
+			const companyIdParam = this.getNodeParameter('companyId') as any;
+			const projectIdParam = this.getNodeParameter('projectId') as any;
+			
+			// Extract company ID from resourceLocator
+			let actualCompanyId = '';
+			if (typeof companyIdParam === 'object' && companyIdParam.value) {
+				actualCompanyId = companyIdParam.value;
+			} else if (typeof companyIdParam === 'string') {
+				actualCompanyId = companyIdParam;
+			}
+
+			// Extract project ID from resourceLocator
+			let actualProjectId = '';
+			if (typeof projectIdParam === 'object' && projectIdParam.value) {
+				actualProjectId = projectIdParam.value;
+			} else if (typeof projectIdParam === 'string') {
+				actualProjectId = projectIdParam;
+			}
+
+			if (!actualCompanyId) {
+				return {
+					results: [{
+						name: 'Please Select a Company First',
+						value: '',
+					}]
+				};
+			}
+
+			if (!actualProjectId) {
+				return {
+					results: [{
+						name: 'Please Select a Project First',
+						value: '',
+					}]
+				};
+			}
+
+			const credentials = await this.getCredentials('blueApi') as BlueCredentials;
+			
+			// Use the provided query for getting project users
+			const query = `query GetProjectUsers {
+				projectUserList(projectId: "${actualProjectId}") {
+					users {
+						id
+						uid
+						fullName
+						email
+					}
+				}
+			}`;
+
+			const requestOptions = {
+				method: 'POST' as const,
+				url: 'https://api.blue.cc/graphql',
+				headers: {
+					'X-Bloo-Token-ID': credentials.tokenId,
+					'X-Bloo-Token-Secret': credentials.tokenSecret,
+					'Content-Type': 'application/json',
+					'User-Agent': 'n8n-blue-node/1.0',
+				},
+				body: {
+					query,
+					variables: {},
+				},
+				json: true,
+			};
+
+			const response = await this.helpers.request(requestOptions);
+
+			if (response.errors && response.errors.length > 0) {
+				const errorMessage = response.errors.map((err: any) => err.message).join(', ');
+				throw new Error(`GraphQL Error: ${errorMessage}`);
+			}
+
+			const users = response.data?.projectUserList?.users || [];
+			const results: INodeListSearchItems[] = users
+				.filter((user: any) => 
+					!filter || 
+					user.fullName.toLowerCase().includes(filter.toLowerCase()) ||
+					user.email.toLowerCase().includes(filter.toLowerCase())
+				)
+				.map((user: any) => ({
+					name: `${user.fullName} (${user.email})`,
+					value: user.id,
+				}));
+
+			return { results };
+		} catch (error) {
+			return { 
+				results: [{
+					name: `Error: ${error instanceof Error ? error.message : 'Unknown error'}`,
+					value: '',
+				}]
+			};
+		}
+	}
+
+	async searchProjectTags(this: ILoadOptionsFunctions, filter?: string): Promise<INodeListSearchResult> {
+		try {
+			const companyIdParam = this.getNodeParameter('companyId') as any;
+			const projectIdParam = this.getNodeParameter('projectId') as any;
+			
+			// Extract company ID from resourceLocator
+			let actualCompanyId = '';
+			if (typeof companyIdParam === 'object' && companyIdParam.value) {
+				actualCompanyId = companyIdParam.value;
+			} else if (typeof companyIdParam === 'string') {
+				actualCompanyId = companyIdParam;
+			}
+
+			// Extract project ID from resourceLocator
+			let actualProjectId = '';
+			if (typeof projectIdParam === 'object' && projectIdParam.value) {
+				actualProjectId = projectIdParam.value;
+			} else if (typeof projectIdParam === 'string') {
+				actualProjectId = projectIdParam;
+			}
+
+			if (!actualCompanyId) {
+				return {
+					results: [{
+						name: 'Please Select a Company First',
+						value: '',
+					}]
+				};
+			}
+
+			if (!actualProjectId) {
+				return {
+					results: [{
+						name: 'Please Select a Project First',
+						value: '',
+					}]
+				};
+			}
+
+			const credentials = await this.getCredentials('blueApi') as BlueCredentials;
+			
+			// Use the provided query for getting project tags
+			const query = `query ListOfTagsWithinProjects {
+				tagList(filter: { projectIds: ["${actualProjectId}"], excludeArchivedProjects: false }) {
+					items {
+						id
+						uid
+						title
+						color
+					}
+				}
+			}`;
+
+			const requestOptions = {
+				method: 'POST' as const,
+				url: 'https://api.blue.cc/graphql',
+				headers: {
+					'X-Bloo-Token-ID': credentials.tokenId,
+					'X-Bloo-Token-Secret': credentials.tokenSecret,
+					'Content-Type': 'application/json',
+					'User-Agent': 'n8n-blue-node/1.0',
+				},
+				body: {
+					query,
+					variables: {},
+				},
+				json: true,
+			};
+
+			const response = await this.helpers.request(requestOptions);
+
+			if (response.errors && response.errors.length > 0) {
+				const errorMessage = response.errors.map((err: any) => err.message).join(', ');
+				throw new Error(`GraphQL Error: ${errorMessage}`);
+			}
+
+			const tags = response.data?.tagList?.items || [];
+			const results: INodeListSearchItems[] = tags
+				.filter((tag: any) => 
+					!filter || 
+					tag.title.toLowerCase().includes(filter.toLowerCase())
+				)
+				.map((tag: any) => ({
+					name: `${tag.title} (${tag.color || 'no color'})`,
+					value: tag.id,
+				}));
+
+			return { results };
+		} catch (error) {
+			return { 
+				results: [{
+					name: `Error: ${error instanceof Error ? error.message : 'Unknown error'}`,
+					value: '',
+				}]
+			};
+		}
+	}
+
+	async searchCustomFields(this: ILoadOptionsFunctions, filter?: string): Promise<INodeListSearchResult> {
+		try {
+			const companyIdParam = this.getNodeParameter('companyId') as any;
+			const projectIdParam = this.getNodeParameter('projectId') as any;
+			
+			// Extract company ID from resourceLocator
+			let actualCompanyId = '';
+			if (typeof companyIdParam === 'object' && companyIdParam.value) {
+				actualCompanyId = companyIdParam.value;
+			} else if (typeof companyIdParam === 'string') {
+				actualCompanyId = companyIdParam;
+			}
+
+			// Extract project ID from resourceLocator
+			let actualProjectId = '';
+			if (typeof projectIdParam === 'object' && projectIdParam.value) {
+				actualProjectId = projectIdParam.value;
+			} else if (typeof projectIdParam === 'string') {
+				actualProjectId = projectIdParam;
+			}
+
+			if (!actualCompanyId) {
+				return {
+					results: [{
+						name: 'Please Select a Company First',
+						value: '',
+					}]
+				};
+			}
+
+			if (!actualProjectId) {
+				return {
+					results: [{
+						name: 'Please Select a Project First',
+						value: '',
+					}]
+				};
+			}
+
+			const credentials = await this.getCredentials('blueApi') as BlueCredentials;
+			
+			// Use the provided query for getting custom fields
+			const query = `query ListCustomFields {
+				customFields(
+					filter: { projectId: "${actualProjectId}" }
+					sort: name_ASC
+					take: 50
+				) {
+					items {
+						id
+						uid
+						name
+						type
+					}
+				}
+			}`;
+
+			const requestOptions = {
+				method: 'POST' as const,
+				url: 'https://api.blue.cc/graphql',
+				headers: {
+					'X-Bloo-Token-ID': credentials.tokenId,
+					'X-Bloo-Token-Secret': credentials.tokenSecret,
+					'Content-Type': 'application/json',
+					'User-Agent': 'n8n-blue-node/1.0',
+				},
+				body: {
+					query,
+					variables: {},
+				},
+				json: true,
+			};
+
+			const response = await this.helpers.request(requestOptions);
+
+			if (response.errors && response.errors.length > 0) {
+				const errorMessage = response.errors.map((err: any) => err.message).join(', ');
+				throw new Error(`GraphQL Error: ${errorMessage}`);
+			}
+
+			const customFields = response.data?.customFields?.items || [];
+			const results: INodeListSearchItems[] = customFields
+				.filter((field: any) => 
+					!filter || 
+					field.name.toLowerCase().includes(filter.toLowerCase())
+				)
+				.map((field: any) => ({
+					name: `${field.name} (${field.type})`,
+					value: field.id,
+				}));
+
+			return { results };
+		} catch (error) {
+			return { 
+				results: [{
+					name: `Error: ${error instanceof Error ? error.message : 'Unknown error'}`,
+					value: '',
+				}]
+			};
+		}
+	}
+
+	async getProjectUsers(this: ILoadOptionsFunctions): Promise<INodePropertyOptions[]> {
+		try {
+			const companyIdParam = this.getNodeParameter('companyId') as any;
+			const projectIdParam = this.getNodeParameter('projectId') as any;
+			
+			// Extract company ID from resourceLocator
+			let actualCompanyId = '';
+			if (typeof companyIdParam === 'object' && companyIdParam.value) {
+				actualCompanyId = companyIdParam.value;
+			} else if (typeof companyIdParam === 'string') {
+				actualCompanyId = companyIdParam;
+			}
+
+			// Extract project ID from resourceLocator
+			let actualProjectId = '';
+			if (typeof projectIdParam === 'object' && projectIdParam.value) {
+				actualProjectId = projectIdParam.value;
+			} else if (typeof projectIdParam === 'string') {
+				actualProjectId = projectIdParam;
+			}
+
+			if (!actualCompanyId || !actualProjectId) {
+				return [{
+					name: 'Please Select a Company and Project First',
+					value: '',
+				}];
+			}
+
+			const credentials = await this.getCredentials('blueApi') as BlueCredentials;
+			
+			const query = `query GetProjectUsers {
+				projectUserList(projectId: "${actualProjectId}") {
+					users {
+						id
+						uid
+						fullName
+						email
+					}
+				}
+			}`;
+
+			const requestOptions = {
+				method: 'POST' as const,
+				url: 'https://api.blue.cc/graphql',
+				headers: {
+					'X-Bloo-Token-ID': credentials.tokenId,
+					'X-Bloo-Token-Secret': credentials.tokenSecret,
+					'Content-Type': 'application/json',
+					'User-Agent': 'n8n-blue-node/1.0',
+				},
+				body: {
+					query: query.trim(),
+					variables: {},
+				},
+				json: true,
+			};
+
+			const response = await this.helpers.request(requestOptions);
+
+			if (response.errors && response.errors.length > 0) {
+				return [{
+					name: 'Error Loading Users',
+					value: '',
+				}];
+			}
+
+			const users = response.data?.projectUserList?.users || [];
+			return users.map((user: any) => ({
+				name: `${user.fullName} (${user.email})`,
+				value: user.id,
+			}));
+
+		} catch (error) {
+			return [{
+				name: 'Error Loading Users',
+				value: '',
+			}];
+		}
+	}
+
+	async getProjectTags(this: ILoadOptionsFunctions): Promise<INodePropertyOptions[]> {
+		try {
+			const companyIdParam = this.getNodeParameter('companyId') as any;
+			const projectIdParam = this.getNodeParameter('projectId') as any;
+			
+			// Extract company ID from resourceLocator
+			let actualCompanyId = '';
+			if (typeof companyIdParam === 'object' && companyIdParam.value) {
+				actualCompanyId = companyIdParam.value;
+			} else if (typeof companyIdParam === 'string') {
+				actualCompanyId = companyIdParam;
+			}
+
+			// Extract project ID from resourceLocator
+			let actualProjectId = '';
+			if (typeof projectIdParam === 'object' && projectIdParam.value) {
+				actualProjectId = projectIdParam.value;
+			} else if (typeof projectIdParam === 'string') {
+				actualProjectId = projectIdParam;
+			}
+
+			if (!actualCompanyId || !actualProjectId) {
+				return [{
+					name: 'Please Select a Company and Project First',
+					value: '',
+				}];
+			}
+
+			const credentials = await this.getCredentials('blueApi') as BlueCredentials;
+			
+			const query = `query ListOfTagsWithinProjects {
+				tagList(filter: { projectIds: ["${actualProjectId}"], excludeArchivedProjects: false }) {
+					items {
+						id
+						uid
+						title
+						color
+					}
+				}
+			}`;
+
+			const requestOptions = {
+				method: 'POST' as const,
+				url: 'https://api.blue.cc/graphql',
+				headers: {
+					'X-Bloo-Token-ID': credentials.tokenId,
+					'X-Bloo-Token-Secret': credentials.tokenSecret,
+					'Content-Type': 'application/json',
+					'User-Agent': 'n8n-blue-node/1.0',
+				},
+				body: {
+					query: query.trim(),
+					variables: {},
+				},
+				json: true,
+			};
+
+			const response = await this.helpers.request(requestOptions);
+
+			if (response.errors && response.errors.length > 0) {
+				return [{
+					name: 'Error Loading Tags',
+					value: '',
+				}];
+			}
+
+			const tags = response.data?.tagList?.items || [];
+			return tags.map((tag: any) => ({
+				name: `${tag.title} (${tag.color || 'no color'})`,
+				value: tag.id,
+			}));
+
+		} catch (error) {
+			return [{
+				name: 'Error Loading Tags',
+				value: '',
+			}];
+		}
+	}
+
+	async getCustomFields(this: ILoadOptionsFunctions): Promise<INodePropertyOptions[]> {
+		try {
+			const companyIdParam = this.getNodeParameter('companyId') as any;
+			const projectIdParam = this.getNodeParameter('projectId') as any;
+			
+			// Extract company ID from resourceLocator
+			let actualCompanyId = '';
+			if (typeof companyIdParam === 'object' && companyIdParam.value) {
+				actualCompanyId = companyIdParam.value;
+			} else if (typeof companyIdParam === 'string') {
+				actualCompanyId = companyIdParam;
+			}
+
+			// Extract project ID from resourceLocator
+			let actualProjectId = '';
+			if (typeof projectIdParam === 'object' && projectIdParam.value) {
+				actualProjectId = projectIdParam.value;
+			} else if (typeof projectIdParam === 'string') {
+				actualProjectId = projectIdParam;
+			}
+
+			if (!actualCompanyId || !actualProjectId) {
+				return [{
+					name: 'Please Select a Company and Project First',
+					value: '',
+				}];
+			}
+
+			const credentials = await this.getCredentials('blueApi') as BlueCredentials;
+			
+			const query = `query ListCustomFields {
+				customFields(
+					filter: { projectId: "${actualProjectId}" }
+					sort: name_ASC
+					take: 50
+				) {
+					items {
+						id
+						uid
+						name
+						type
+					}
+				}
+			}`;
+
+			const requestOptions = {
+				method: 'POST' as const,
+				url: 'https://api.blue.cc/graphql',
+				headers: {
+					'X-Bloo-Token-ID': credentials.tokenId,
+					'X-Bloo-Token-Secret': credentials.tokenSecret,
+					'Content-Type': 'application/json',
+					'User-Agent': 'n8n-blue-node/1.0',
+				},
+				body: {
+					query: query.trim(),
+					variables: {},
+				},
+				json: true,
+			};
+
+			const response = await this.helpers.request(requestOptions);
+
+			if (response.errors && response.errors.length > 0) {
+				return [{
+					name: 'Error Loading Custom Fields',
+					value: '',
+				}];
+			}
+
+			const customFields = response.data?.customFields?.items || [];
+			return customFields.map((field: any) => ({
+				name: `${field.name} (${field.type})`,
+				value: field.id,
+			}));
+
+		} catch (error) {
+			return [{
+				name: 'Error Loading Custom Fields',
+				value: '',
+			}];
+		}
+	}
+
+	async getProjectTemplates(this: ILoadOptionsFunctions): Promise<INodePropertyOptions[]> {
+		try {
+			const companyIdParam = this.getNodeParameter('companyId') as any;
+			
+			// Extract company ID from resourceLocator
+			let actualCompanyId = '';
+			if (typeof companyIdParam === 'object' && companyIdParam.value) {
+				actualCompanyId = companyIdParam.value;
+			} else if (typeof companyIdParam === 'string') {
+				actualCompanyId = companyIdParam;
+			}
+
+			if (!actualCompanyId) {
+				return [{
+					name: 'Please Select a Company First',
+					value: '',
+				}];
+			}
+
+			const credentials = await this.getCredentials('blueApi') as BlueCredentials;
+			
+			const query = `query FilteredProjectList {
+				projectList(
+					filter: {
+						companyIds: ["${actualCompanyId}"]
+						archived: false
+						isTemplate: true
+					}
+					sort: [position_ASC, name_ASC]
+					skip: 0
+					take: 50
+				) {
+					items {
+						id
+						name
+						slug
+						position
+						archived
+					}
+				}
+			}`;
+
+			const requestOptions = {
+				method: 'POST' as const,
+				url: 'https://api.blue.cc/graphql',
+				headers: {
+					'X-Bloo-Token-ID': credentials.tokenId,
+					'X-Bloo-Token-Secret': credentials.tokenSecret,
+					'Content-Type': 'application/json',
+					'User-Agent': 'n8n-blue-node/1.0',
+				},
+				body: {
+					query: query.trim(),
+					variables: {},
+				},
+				json: true,
+			};
+
+			const response = await this.helpers.request(requestOptions);
+
+			if (response.errors && response.errors.length > 0) {
+				return [{
+					name: 'Error Loading Templates',
+					value: '',
+				}];
+			}
+
+			const templates = response.data?.projectList?.items || [];
+			return templates.map((template: any) => ({
+				name: template.name,
+				value: template.id,
+			}));
+
+		} catch (error) {
+			return [{
+				name: 'Error Loading Project Templates',
+				value: '',
+			}];
 		}
 	}
 

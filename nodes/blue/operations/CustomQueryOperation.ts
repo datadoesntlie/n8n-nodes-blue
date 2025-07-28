@@ -10,6 +10,7 @@ export class CustomQueryOperation extends BaseBlueOperation {
 			const query = context.executeFunctions.getNodeParameter('query', context.itemIndex) as string;
 			const variables = context.executeFunctions.getNodeParameter('variables', context.itemIndex) as IDataObject;
 			const companyId = context.executeFunctions.getNodeParameter('companyId', context.itemIndex, '') as string;
+			const projectId = context.executeFunctions.getNodeParameter('projectId', context.itemIndex, '') as string;
 
 			// Validate query
 			if (!query || query.trim() === '') {
@@ -39,6 +40,7 @@ export class CustomQueryOperation extends BaseBlueOperation {
 				query,
 				parsedVariables,
 				companyId || undefined,
+				projectId || undefined,
 			);
 
 			const data = this.handleGraphQLResponse(
