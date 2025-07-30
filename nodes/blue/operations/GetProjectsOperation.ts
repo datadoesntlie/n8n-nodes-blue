@@ -6,7 +6,19 @@ export class GetProjectsOperation extends BaseBlueOperation {
 
 	async execute(context: BlueOperationContext): Promise<BlueOperationResult> {
 		try {
-			const companyId = context.executeFunctions.getNodeParameter('companyId', context.itemIndex) as string;
+			const companyIdParam = context.executeFunctions.getNodeParameter('companyId', context.itemIndex) as any;
+			
+			// Extract company ID from resourceLocator
+			let companyId = '';
+			if (typeof companyIdParam === 'object' && companyIdParam.value) {
+				companyId = companyIdParam.value;
+			} else if (typeof companyIdParam === 'string') {
+				companyId = companyIdParam;
+			}
+			
+			if (!companyId) {
+				throw new Error('Company ID is required');
+			}
 
 			const query = `query FilteredProjectList {
 				projectList(

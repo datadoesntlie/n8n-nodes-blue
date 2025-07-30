@@ -37,30 +37,22 @@ export class blue implements INodeType {
 		],
 		properties: [
 			{
-				displayName: 'Company',
-				name: 'companyId',
-				type: 'string',
-				displayOptions: {
-					hide: {
-						operation: ['getCompanies', 'updateRecord', 'createRecord', 'createProject'],
-					},
-				},
-				default: '',
-				required: true,
-				description: 'Company ID or slug to work with',
-				placeholder: 'e.g., your-company-slug',
-			},
-			{
 				displayName: 'Operation',
 				name: 'operation',
 				type: 'options',
 				noDataExpression: true,
 				options: [
 					{
-						name: 'Get Companies',
-						value: 'getCompanies',
-						description: 'List all companies you have access to',
-						action: 'List all companies you have access to',
+						name: 'Create Project',
+						value: 'createProject',
+						description: 'Create a new project from a template',
+						action: 'Create a new project from a template',
+					},
+					{
+						name: 'Create Record',
+						value: 'createRecord',
+						description: 'Create a new record (todo/task) with custom fields',
+						action: 'Create a new record todo task with custom fields',
 					},
 					{
 						name: 'Custom Query',
@@ -69,10 +61,16 @@ export class blue implements INodeType {
 						action: 'Execute a custom graph ql query',
 					},
 					{
+						name: 'Get Companies',
+						value: 'getCompanies',
+						description: 'List all companies you have access to',
+						action: 'List all companies you have access to',
+					},
+					{
 						name: 'Get Projects',
 						value: 'getProjects',
-						description: 'Retrieve all projects',
-						action: 'Retrieve all projects',
+						description: 'Retrieve projects from a company',
+						action: 'Retrieve projects from a company',
 					},
 					{
 						name: 'Get Records',
@@ -86,20 +84,62 @@ export class blue implements INodeType {
 						description: 'Update a record (todo/task) with custom fields',
 						action: 'Update a record todo task with custom fields',
 					},
-					{
-						name: 'Create Record',
-						value: 'createRecord',
-						description: 'Create a new record (todo/task) with custom fields',
-						action: 'Create a new record todo task with custom fields',
-					},
-					{
-						name: 'Create Project',
-						value: 'createProject',
-						description: 'Create a new project from a template',
-						action: 'Create a new project from a template',
-					},
 				],
 				default: 'getCompanies',
+			},
+			{
+				displayName: 'Company',
+				name: 'companyId',
+				type: 'resourceLocator',
+				default: { mode: 'list', value: '' },
+				displayOptions: {
+					show: {
+						operation: ['getProjects'],
+					},
+				},
+				required: true,
+				description: 'Company to retrieve projects from',
+				modes: [
+					{
+						displayName: 'From List',
+						name: 'list',
+						type: 'list',
+						placeholder: 'Select a company...',
+						typeOptions: {
+							searchListMethod: 'searchCompanies',
+							searchable: true,
+						},
+					},
+					{
+						displayName: 'By ID',
+						name: 'id',
+						type: 'string',
+						placeholder: 'e.g., your-company-slug',
+						validation: [
+							{
+								type: 'regex',
+								properties: {
+									regex: '.+',
+									errorMessage: 'Company ID cannot be empty',
+								},
+							},
+						],
+					},
+				],
+			},
+			{
+				displayName: 'Company',
+				name: 'companyId',
+				type: 'string',
+				displayOptions: {
+					hide: {
+						operation: ['getCompanies', 'updateRecord', 'createRecord', 'createProject', 'getProjects'],
+					},
+				},
+				default: '',
+				required: true,
+				description: 'Company ID or slug to work with',
+				placeholder: 'e.g., your-company-slug',
 			},
 			// Custom Query Section
 			{
@@ -256,7 +296,6 @@ export class blue implements INodeType {
 						operation: ['updateRecord'],
 					},
 				},
-				required: false,
 				description: 'Project containing the record (optional)',
 				modes: [
 					{
@@ -296,7 +335,6 @@ export class blue implements INodeType {
 						operation: ['updateRecord'],
 					},
 				},
-				required: false,
 				description: 'Todo list to move the record to (optional)',
 				modes: [
 					{
@@ -406,7 +444,7 @@ export class blue implements INodeType {
 			{
 				displayName: 'Color',
 				name: 'color',
-				type: 'string',
+				type: 'color',
 				displayOptions: {
 					show: {
 						operation: ['updateRecord'],
@@ -436,167 +474,133 @@ export class blue implements INodeType {
 						displayName: 'Custom Field',
 						values: [
 							{
-								displayName: 'Field ID',
-								name: 'fieldId',
-								type: 'string',
-								default: '',
-								required: true,
-								description: 'ID of the custom field to update',
+						displayName: 'Checkbox Value',
+						name: 'checkboxValue',
+						type: 'boolean',
+						default: false,
+						description: 'Boolean value for checkbox field',
 							},
 							{
-								displayName: 'Field Type',
-								name: 'fieldType',
-								type: 'options',
-								options: [
-									{ name: 'Text', value: 'text' },
-									{ name: 'Number', value: 'number' },
-									{ name: 'Selection', value: 'selection' },
-									{ name: 'Checkbox', value: 'checkbox' },
-									{ name: 'Phone', value: 'phone' },
-									{ name: 'Location', value: 'location' },
-									{ name: 'Countries', value: 'countries' },
+						displayName: 'Countries Text',
+						name: 'countriesText',
+						type: 'string',
+						default: '',
+						description: 'Human-readable country names',
+						placeholder: 'United States, France, Germany',
+							},
+							{
+						displayName: 'Country Codes',
+						name: 'countryCodes',
+						type: 'string',
+						default: '',
+						description: 'Comma-separated list of country codes',
+						placeholder: 'US,FR,DE',
+							},
+							{
+						displayName: 'Field ID',
+						name: 'fieldId',
+						type: 'string',
+						default: '',
+							required:	true,
+						description: 'ID of the custom field to update',
+							},
+							{
+						displayName: 'Field Type',
+						name: 'fieldType',
+						type: 'options',
+						options: [
+									{
+										name: 'Text',
+										value: 'text',
+									},
+									{
+										name: 'Number',
+										value: 'number',
+									},
+									{
+										name: 'Selection',
+										value: 'selection',
+									},
+									{
+										name: 'Checkbox',
+										value: 'checkbox',
+									},
+									{
+										name: 'Phone',
+										value: 'phone',
+									},
+									{
+										name: 'Location',
+										value: 'location',
+									},
+									{
+										name: 'Countries',
+										value: 'countries',
+									},
 								],
-								default: 'text',
-								description: 'Type of the custom field',
+						default: 'text',
+						description: 'Type of the custom field',
 							},
 							{
-								displayName: 'Text Value',
-								name: 'textValue',
-								type: 'string',
-								displayOptions: {
-									show: {
-										fieldType: ['text'],
-									},
-								},
-								default: '',
-								description: 'Text value for the field',
+						displayName: 'Latitude',
+						name: 'latitude',
+						type: 'number',
+						default: 0,
+						description: 'Latitude coordinate',
 							},
 							{
-								displayName: 'Number Value',
-								name: 'numberValue',
-								type: 'number',
-								displayOptions: {
-									show: {
-										fieldType: ['number'],
-									},
-								},
-								default: 0,
-								description: 'Numeric value for the field',
+						displayName: 'Location Text',
+						name: 'locationText',
+						type: 'string',
+						default: '',
+						description: 'Human-readable location description',
 							},
 							{
-								displayName: 'Checkbox Value',
-								name: 'checkboxValue',
-								type: 'boolean',
-								displayOptions: {
-									show: {
-										fieldType: ['checkbox'],
-									},
-								},
-								default: false,
-								description: 'Boolean value for checkbox field',
+						displayName: 'Longitude',
+						name: 'longitude',
+						type: 'number',
+						default: 0,
+						description: 'Longitude coordinate',
 							},
 							{
-								displayName: 'Selection Option IDs',
-								name: 'selectionIds',
-								type: 'string',
-								displayOptions: {
-									show: {
-										fieldType: ['selection'],
-									},
-								},
-								default: '',
-								description: 'Comma-separated list of option IDs for selection fields',
-								placeholder: 'option1,option2,option3',
+						displayName: 'Number Value',
+						name: 'numberValue',
+						type: 'number',
+						default: 0,
+						description: 'Numeric value for the field',
 							},
 							{
-								displayName: 'Phone Number',
-								name: 'phoneNumber',
-								type: 'string',
-								displayOptions: {
-									show: {
-										fieldType: ['phone'],
-									},
-								},
-								default: '',
-								description: 'Phone number with country code',
-								placeholder: '+33642526644',
+						displayName: 'Phone Number',
+						name: 'phoneNumber',
+						type: 'string',
+						default: '',
+						description: 'Phone number with country code',
+						placeholder: '+33642526644',
 							},
 							{
-								displayName: 'Region Code',
-								name: 'regionCode',
-								type: 'string',
-								displayOptions: {
-									show: {
-										fieldType: ['phone'],
-									},
-								},
-								default: '',
-								description: 'Country/region code for phone number',
-								placeholder: 'FR',
+						displayName: 'Region Code',
+						name: 'regionCode',
+						type: 'string',
+						default: '',
+						description: 'Country/region code for phone number',
+						placeholder: 'FR',
 							},
 							{
-								displayName: 'Latitude',
-								name: 'latitude',
-								type: 'number',
-								displayOptions: {
-									show: {
-										fieldType: ['location'],
-									},
-								},
-								default: 0,
-								description: 'Latitude coordinate',
+						displayName: 'Selection Option IDs',
+						name: 'selectionIds',
+						type: 'string',
+						default: '',
+						description: 'Comma-separated list of option IDs for selection fields',
+						placeholder: 'option1,option2,option3',
 							},
 							{
-								displayName: 'Longitude',
-								name: 'longitude',
-								type: 'number',
-								displayOptions: {
-									show: {
-										fieldType: ['location'],
-									},
-								},
-								default: 0,
-								description: 'Longitude coordinate',
+						displayName: 'Text Value',
+						name: 'textValue',
+						type: 'string',
+						default: '',
+						description: 'Text value for the field',
 							},
-							{
-								displayName: 'Location Text',
-								name: 'locationText',
-								type: 'string',
-								displayOptions: {
-									show: {
-										fieldType: ['location'],
-									},
-								},
-								default: '',
-								description: 'Human-readable location description',
-							},
-							{
-								displayName: 'Country Codes',
-								name: 'countryCodes',
-								type: 'string',
-								displayOptions: {
-									show: {
-										fieldType: ['countries'],
-									},
-								},
-								default: '',
-								description: 'Comma-separated list of country codes',
-								placeholder: 'US,FR,DE',
-							},
-							{
-								displayName: 'Countries Text',
-								name: 'countriesText',
-								type: 'string',
-								displayOptions: {
-									show: {
-										fieldType: ['countries'],
-									},
-								},
-								default: '',
-								description: 'Human-readable country names',
-								placeholder: 'United States, France, Germany',
-							},
-						],
+					],
 					},
 				],
 				description: 'Custom fields to update for this record',
@@ -1171,7 +1175,7 @@ export class blue implements INodeType {
 			if (!actualCompanyId) {
 				return {
 					results: [{
-						name: 'Please select a company first',
+						name: 'Please Select a Company First',
 						value: '',
 					}]
 				};
@@ -1276,7 +1280,7 @@ export class blue implements INodeType {
 			if (!actualCompanyId) {
 				return {
 					results: [{
-						name: 'Please select a company first',
+						name: 'Please Select a Company First',
 						value: '',
 					}]
 				};
@@ -1285,7 +1289,7 @@ export class blue implements INodeType {
 			if (!actualProjectId) {
 				return {
 					results: [{
-						name: 'Please select a project first',
+						name: 'Please Select a Project First',
 						value: '',
 					}]
 				};
