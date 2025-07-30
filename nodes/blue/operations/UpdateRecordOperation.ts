@@ -79,27 +79,24 @@ export class UpdateRecordOperation extends BaseBlueOperation {
 			// Step 2: Update custom fields if any are provided
 			if (customFields && Array.isArray(customFields) && customFields.length > 0) {
 				for (const field of customFields) {
-					if (field.fieldId) {
-						const fieldValue = this.extractFieldValue(field);
-						if (fieldValue !== null) {
-							const customFieldMutation = this.buildCustomFieldMutation(recordId, field.fieldId, fieldValue);
-							
-							try {
-								const customFieldResponse = await this.makeGraphQLRequest(context, customFieldMutation, {}, companyId, projectId);
-								const customFieldData = this.handleGraphQLResponse(
-									customFieldResponse,
-									context.additionalOptions.fullResponse as boolean,
-								);
-								results.push({ 
-									type: 'custom_field_update', 
-									fieldId: field.fieldId, 
-									fieldType: field.fieldType,
-									data: customFieldData 
-								});
-							} catch (customFieldError) {
-								// If custom field fails, throw error with mutation details for debugging
-								throw new Error(`Custom field mutation failed. Mutation: ${customFieldMutation}. CompanyId: ${companyId}. ProjectId: ${projectId}. Error: ${customFieldError instanceof Error ? customFieldError.message : 'Unknown error'}`);
-							}
+					if (field.customFieldId && field.value && field.value.trim() !== '') {
+						const customFieldMutation = this.buildSimpleCustomFieldMutation(recordId, field.customFieldId, field.value);
+						
+						try {
+							const customFieldResponse = await this.makeGraphQLRequest(context, customFieldMutation, {}, companyId, projectId);
+							const customFieldData = this.handleGraphQLResponse(
+								customFieldResponse,
+								context.additionalOptions.fullResponse as boolean,
+							);
+							results.push({ 
+								type: 'custom_field_update', 
+								fieldId: field.customFieldId, 
+								value: field.value,
+								data: customFieldData 
+							});
+						} catch (customFieldError) {
+							// If custom field fails, throw error with mutation details for debugging
+							throw new Error(`Custom field mutation failed for field ${field.customFieldId} with value "${field.value}". Mutation: ${customFieldMutation}. CompanyId: ${companyId}. ProjectId: ${projectId}. Error: ${customFieldError instanceof Error ? customFieldError.message : 'Unknown error'}`);
 						}
 					}
 				}
@@ -191,38 +188,56 @@ export class UpdateRecordOperation extends BaseBlueOperation {
 		}`;
 	}
 
-	private buildCustomFieldMutation(recordId: string, fieldId: string, fieldValue: any): string {
-		// Handle different field types based on the value structure
+	private buildSimpleCustomFieldMutation(recordId: string, fieldId: string, value: string): string {
+		// Parse different value formats based on the string content
 		const inputs = [`customFieldId: "${fieldId}"`, `todoId: "${recordId}"`];
 
-		if (typeof fieldValue === 'object' && fieldValue !== null) {
-			// Handle complex field types
-			if (fieldValue.type === 'phone' && fieldValue.text && fieldValue.regionCode) {
-				inputs.push(`text: "${fieldValue.text}"`);
-				inputs.push(`regionCode: "${fieldValue.regionCode}"`);
-			} else if (fieldValue.type === 'location' && fieldValue.latitude && fieldValue.longitude) {
-				inputs.push(`latitude: ${fieldValue.latitude}`);
-				inputs.push(`longitude: ${fieldValue.longitude}`);
-				if (fieldValue.text) inputs.push(`text: "${this.escapeGraphQLString(fieldValue.text)}"`);
-			} else if (fieldValue.type === 'countries' && fieldValue.countryCodes) {
-				inputs.push(`countryCodes: [${fieldValue.countryCodes.map((code: string) => `"${code}"`).join(', ')}]`);
-				if (fieldValue.text) inputs.push(`text: "${this.escapeGraphQLString(fieldValue.text)}"`);
-			} else if (fieldValue.type === 'selection' && fieldValue.optionIds) {
-				inputs.push(`customFieldOptionIds: [${fieldValue.optionIds.map((id: string) => `"${id}"`).join(', ')}]`);
-			} else if (fieldValue.type === 'checkbox' && typeof fieldValue.checked === 'boolean') {
-				inputs.push(`checked: ${fieldValue.checked}`);
-			}
-		} else {
-			// Handle simple field types
-			if (typeof fieldValue === 'string') {
-				inputs.push(`text: "${this.escapeGraphQLString(fieldValue)}"`);
-			} else if (typeof fieldValue === 'number') {
-				inputs.push(`number: ${fieldValue}`);
-			} else if (typeof fieldValue === 'boolean') {
-				inputs.push(`checked: ${fieldValue}`);
+		// Handle different value formats
+		if (value.includes(',') && (value.includes('.') || /^-?\d+(\.\d+)?,-?\d+(\.\d+)?$/.test(value))) {
+			// Location format: "latitude,longitude"
+			const [lat, lng] = value.split(',').map(v => v.trim());
+			if (!isNaN(Number(lat)) && !isNaN(Number(lng))) {
+				inputs.push(`latitude: ${lat}`);
+				inputs.push(`longitude: ${lng}`);
+				return this.buildMutationQuery(inputs);
 			}
 		}
 
+		// Handle comma-separated values (multi-select options)
+		if (value.includes(',') && !value.includes('.')) {
+			const options = value.split(',').map(v => v.trim()).filter(Boolean);
+			if (options.length > 1) {
+				inputs.push(`customFieldOptionIds: [${options.map(id => `"${id}"`).join(', ')}]`);
+				return this.buildMutationQuery(inputs);
+			}
+		}
+
+		// Handle boolean-like values
+		const lowerValue = value.toLowerCase();
+		if (['true', 'false', '1', '0', 'checked', 'unchecked'].includes(lowerValue)) {
+			const boolValue = ['true', '1', 'checked'].includes(lowerValue);
+			inputs.push(`checked: ${boolValue}`);
+			return this.buildMutationQuery(inputs);
+		}
+
+		// Handle numeric values
+		if (!isNaN(Number(value)) && value.trim() !== '') {
+			inputs.push(`number: ${Number(value)}`);
+			return this.buildMutationQuery(inputs);
+		}
+
+		// Handle single option ID (if it looks like an option ID)
+		if (value.startsWith('option_') || /^[a-zA-Z0-9_-]+$/.test(value)) {
+			inputs.push(`customFieldOptionIds: ["${value}"]`);
+			return this.buildMutationQuery(inputs);
+		}
+
+		// Default: treat as text
+		inputs.push(`text: "${this.escapeGraphQLString(value)}"`);
+		return this.buildMutationQuery(inputs);
+	}
+
+	private buildMutationQuery(inputs: string[]): string {
 		return `mutation {
 			setTodoCustomField(
 				input: {
@@ -232,67 +247,6 @@ export class UpdateRecordOperation extends BaseBlueOperation {
 		}`;
 	}
 
-	private extractFieldValue(field: any): any {
-		const { fieldType } = field;
-
-		switch (fieldType) {
-			case 'text':
-				return field.textValue || null;
-
-			case 'number':
-				return field.numberValue !== undefined ? field.numberValue : null;
-
-			case 'checkbox':
-				return field.checkboxValue !== undefined ? field.checkboxValue : null;
-
-			case 'selection':
-				if (field.selectionIds) {
-					const optionIds = field.selectionIds.split(',').map((id: string) => id.trim()).filter(Boolean);
-					return optionIds.length > 0 ? { type: 'selection', optionIds } : null;
-				}
-				return null;
-
-			case 'phone':
-				if (field.phoneNumber && field.regionCode) {
-					return {
-						type: 'phone',
-						text: field.phoneNumber,
-						regionCode: field.regionCode
-					};
-				}
-				return null;
-
-			case 'location':
-				if (field.latitude !== undefined && field.longitude !== undefined) {
-					const locationData: any = {
-						type: 'location',
-						latitude: field.latitude,
-						longitude: field.longitude
-					};
-					if (field.locationText) {
-						locationData.text = field.locationText;
-					}
-					return locationData;
-				}
-				return null;
-
-			case 'countries':
-				if (field.countryCodes) {
-					const codes = field.countryCodes.split(',').map((code: string) => code.trim()).filter(Boolean);
-					if (codes.length > 0) {
-						return {
-							type: 'countries',
-							countryCodes: codes,
-							text: field.countriesText || ''
-						};
-					}
-				}
-				return null;
-
-			default:
-				return null;
-		}
-	}
 
 	private escapeGraphQLString(str: string): string {
 		return str.replace(/"/g, '\\"').replace(/\n/g, '\\n').replace(/\r/g, '\\r');

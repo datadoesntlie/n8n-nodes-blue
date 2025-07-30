@@ -6,8 +6,28 @@ export class GetRecordsOperation extends BaseBlueOperation {
 
 	async execute(context: BlueOperationContext): Promise<BlueOperationResult> {
 		try {
-			const companyId = context.executeFunctions.getNodeParameter('companyId', context.itemIndex) as string;
-			const projectId = context.executeFunctions.getNodeParameter('projectId', context.itemIndex, '') as string;
+			const companyIdParam = context.executeFunctions.getNodeParameter('companyId', context.itemIndex) as any;
+			const projectIdParam = context.executeFunctions.getNodeParameter('projectId', context.itemIndex, '') as any;
+			
+			// Extract company ID from resourceLocator
+			let companyId = '';
+			if (typeof companyIdParam === 'object' && companyIdParam.value) {
+				companyId = companyIdParam.value;
+			} else if (typeof companyIdParam === 'string') {
+				companyId = companyIdParam;
+			}
+			
+			if (!companyId) {
+				throw new Error('Company ID is required');
+			}
+			
+			// Extract project ID from resourceLocator (optional)
+			let projectId = '';
+			if (typeof projectIdParam === 'object' && projectIdParam.value) {
+				projectId = projectIdParam.value;
+			} else if (typeof projectIdParam === 'string') {
+				projectId = projectIdParam;
+			}
 			const searchTerm = context.executeFunctions.getNodeParameter('searchTerm', context.itemIndex, '') as string;
 			const showCompleted = context.executeFunctions.getNodeParameter('showCompleted', context.itemIndex, false) as boolean;
 			const limit = context.executeFunctions.getNodeParameter('limit', context.itemIndex, 50) as number;

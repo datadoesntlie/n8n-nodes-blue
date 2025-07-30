@@ -133,7 +133,7 @@ export class blue implements INodeType {
 				type: 'string',
 				displayOptions: {
 					hide: {
-						operation: ['getCompanies', 'updateRecord', 'createRecord', 'createProject', 'getProjects'],
+						operation: ['getCompanies', 'updateRecord', 'createRecord', 'createProject', 'getProjects', 'getRecords'],
 					},
 				},
 				default: '',
@@ -178,17 +178,83 @@ export class blue implements INodeType {
 			},
 			// Get Records Section
 			{
-				displayName: 'Project ID',
-				name: 'projectId',
-				type: 'string',
+				displayName: 'Company',
+				name: 'companyId',
+				type: 'resourceLocator',
+				default: { mode: 'list', value: '' },
 				displayOptions: {
 					show: {
 						operation: ['getRecords'],
 					},
 				},
-				default: '',
-				description: 'ID of the project to filter records from (optional)',
-				placeholder: 'e.g., crm-113',
+				required: true,
+				description: 'Company to retrieve records from',
+				modes: [
+					{
+						displayName: 'From List',
+						name: 'list',
+						type: 'list',
+						placeholder: 'Select a company...',
+						typeOptions: {
+							searchListMethod: 'searchCompanies',
+							searchable: true,
+						},
+					},
+					{
+						displayName: 'By ID',
+						name: 'id',
+						type: 'string',
+						placeholder: 'e.g., your-company-slug',
+						validation: [
+							{
+								type: 'regex',
+								properties: {
+									regex: '.+',
+									errorMessage: 'Company ID cannot be empty',
+								},
+							},
+						],
+					},
+				],
+			},
+			{
+				displayName: 'Project',
+				name: 'projectId',
+				type: 'resourceLocator',
+				default: { mode: 'list', value: '' },
+				displayOptions: {
+					show: {
+						operation: ['getRecords'],
+					},
+				},
+				description: 'Project to filter records from (optional)',
+				modes: [
+					{
+						displayName: 'From List',
+						name: 'list',
+						type: 'list',
+						placeholder: 'Select a project...',
+						typeOptions: {
+							searchListMethod: 'searchProjects',
+							searchable: true,
+						},
+					},
+					{
+						displayName: 'By ID',
+						name: 'id',
+						type: 'string',
+						placeholder: 'e.g., crm-113',
+						validation: [
+							{
+								type: 'regex',
+								properties: {
+									regex: '.+',
+									errorMessage: 'Project ID cannot be empty',
+								},
+							},
+						],
+					},
+				],
 			},
 			{
 				displayName: 'Search Term',
@@ -474,136 +540,47 @@ export class blue implements INodeType {
 						displayName: 'Custom Field',
 						values: [
 							{
-						displayName: 'Checkbox Value',
-						name: 'checkboxValue',
-						type: 'boolean',
-						default: false,
-						description: 'Boolean value for checkbox field',
+								displayName: 'Custom Field Name or ID',
+								name: 'customFieldId',
+								type: 'options',
+								default: '',
+								required: true,
+								description: 'Select the custom field to update. The field type and available options are shown in parentheses.',
+								typeOptions: {
+									loadOptionsMethod: 'getCustomFields',
+								},
 							},
 							{
-						displayName: 'Countries Text',
-						name: 'countriesText',
-						type: 'string',
-						default: '',
-						description: 'Human-readable country names',
-						placeholder: 'United States, France, Germany',
+								displayName: 'Value',
+								name: 'value',
+								type: 'string',
+								default: '',
+								required: true,
+								description: `Enter the value based on the field type:<br/>
+<br/>
+<table style="border-collapse: collapse; width: 100%;">
+<tr style="background-color: #f5f5f5;"><th style="border: 1px solid #ddd; padding: 8px; text-align: left;">Field Type</th><th style="border: 1px solid #ddd; padding: 8px; text-align: left;">Format</th><th style="border: 1px solid #ddd; padding: 8px; text-align: left;">Example</th></tr>
+<tr><td style="border: 1px solid #ddd; padding: 4px;"><strong>TEXT_SINGLE</strong></td><td style="border: 1px solid #ddd; padding: 4px;">Plain Text</td><td style="border: 1px solid #ddd; padding: 4px; font-family: monospace;">"Project Alpha"</td></tr>
+<tr><td style="border: 1px solid #ddd; padding: 4px;"><strong>TEXT_MULTI</strong></td><td style="border: 1px solid #ddd; padding: 4px;">Plain Text</td><td style="border: 1px solid #ddd; padding: 4px; font-family: monospace;">"This is a\\nmulti-line description"</td></tr>
+<tr><td style="border: 1px solid #ddd; padding: 4px;"><strong>SELECT_SINGLE</strong></td><td style="border: 1px solid #ddd; padding: 4px;">Option ID</td><td style="border: 1px solid #ddd; padding: 4px; font-family: monospace;">"option_123456"</td></tr>
+<tr><td style="border: 1px solid #ddd; padding: 4px;"><strong>SELECT_MULTI</strong></td><td style="border: 1px solid #ddd; padding: 4px;">Comma-separated IDs</td><td style="border: 1px solid #ddd; padding: 4px; font-family: monospace;">"option_123456,option_789012"</td></tr>
+<tr><td style="border: 1px solid #ddd; padding: 4px;"><strong>LOCATION</strong></td><td style="border: 1px solid #ddd; padding: 4px;">Latitude,Longitude</td><td style="border: 1px solid #ddd; padding: 4px; font-family: monospace;">"37.7749,-122.4194"</td></tr>
+<tr><td style="border: 1px solid #ddd; padding: 4px;"><strong>CHECKBOX</strong></td><td style="border: 1px solid #ddd; padding: 4px;">Boolean-like value</td><td style="border: 1px solid #ddd; padding: 4px; font-family: monospace;">"true", "1", "checked"</td></tr>
+<tr><td style="border: 1px solid #ddd; padding: 4px;"><strong>COUNTRY</strong></td><td style="border: 1px solid #ddd; padding: 4px;">ISO 3166 country code</td><td style="border: 1px solid #ddd; padding: 4px; font-family: monospace;">"US", "GB", "JP"</td></tr>
+<tr><td style="border: 1px solid #ddd; padding: 4px;"><strong>CURRENCY</strong></td><td style="border: 1px solid #ddd; padding: 4px;">Amount with currency code</td><td style="border: 1px solid #ddd; padding: 4px; font-family: monospace;">"USD200", "200USD", "KHR4000"</td></tr>
+<tr><td style="border: 1px solid #ddd; padding: 4px;"><strong>DATE</strong></td><td style="border: 1px solid #ddd; padding: 4px;">ISO 8601 date string(s)</td><td style="border: 1px solid #ddd; padding: 4px; font-family: monospace;">"2023-12-31" or "2023-12-01,2023-12-31"</td></tr>
+<tr><td style="border: 1px solid #ddd; padding: 4px;"><strong>PHONE</strong></td><td style="border: 1px solid #ddd; padding: 4px;">Plain Text</td><td style="border: 1px solid #ddd; padding: 4px; font-family: monospace;">"+1-555-123-4567"</td></tr>
+<tr><td style="border: 1px solid #ddd; padding: 4px;"><strong>EMAIL</strong></td><td style="border: 1px solid #ddd; padding: 4px;">Plain Text</td><td style="border: 1px solid #ddd; padding: 4px; font-family: monospace;">"contact@example.com"</td></tr>
+<tr><td style="border: 1px solid #ddd; padding: 4px;"><strong>STAR_RATING</strong></td><td style="border: 1px solid #ddd; padding: 4px;">Plain Text</td><td style="border: 1px solid #ddd; padding: 4px; font-family: monospace;">"4"</td></tr>
+<tr><td style="border: 1px solid #ddd; padding: 4px;"><strong>PERCENT</strong></td><td style="border: 1px solid #ddd; padding: 4px;">Plain Text</td><td style="border: 1px solid #ddd; padding: 4px; font-family: monospace;">"75" or "75%"</td></tr>
+<tr><td style="border: 1px solid #ddd; padding: 4px;"><strong>URL</strong></td><td style="border: 1px solid #ddd; padding: 4px;">Plain Text</td><td style="border: 1px solid #ddd; padding: 4px; font-family: monospace;">"https://example.com"</td></tr>
+</table>`,
+								placeholder: 'e.g., "Project Alpha" for TEXT, "option_123456" for SELECT_SINGLE, "37.7749,-122.4194" for LOCATION, etc.',
 							},
-							{
-						displayName: 'Country Codes',
-						name: 'countryCodes',
-						type: 'string',
-						default: '',
-						description: 'Comma-separated list of country codes',
-						placeholder: 'US,FR,DE',
-							},
-							{
-						displayName: 'Field ID',
-						name: 'fieldId',
-						type: 'string',
-						default: '',
-							required:	true,
-						description: 'ID of the custom field to update',
-							},
-							{
-						displayName: 'Field Type',
-						name: 'fieldType',
-						type: 'options',
-						options: [
-									{
-										name: 'Text',
-										value: 'text',
-									},
-									{
-										name: 'Number',
-										value: 'number',
-									},
-									{
-										name: 'Selection',
-										value: 'selection',
-									},
-									{
-										name: 'Checkbox',
-										value: 'checkbox',
-									},
-									{
-										name: 'Phone',
-										value: 'phone',
-									},
-									{
-										name: 'Location',
-										value: 'location',
-									},
-									{
-										name: 'Countries',
-										value: 'countries',
-									},
-								],
-						default: 'text',
-						description: 'Type of the custom field',
-							},
-							{
-						displayName: 'Latitude',
-						name: 'latitude',
-						type: 'number',
-						default: 0,
-						description: 'Latitude coordinate',
-							},
-							{
-						displayName: 'Location Text',
-						name: 'locationText',
-						type: 'string',
-						default: '',
-						description: 'Human-readable location description',
-							},
-							{
-						displayName: 'Longitude',
-						name: 'longitude',
-						type: 'number',
-						default: 0,
-						description: 'Longitude coordinate',
-							},
-							{
-						displayName: 'Number Value',
-						name: 'numberValue',
-						type: 'number',
-						default: 0,
-						description: 'Numeric value for the field',
-							},
-							{
-						displayName: 'Phone Number',
-						name: 'phoneNumber',
-						type: 'string',
-						default: '',
-						description: 'Phone number with country code',
-						placeholder: '+33642526644',
-							},
-							{
-						displayName: 'Region Code',
-						name: 'regionCode',
-						type: 'string',
-						default: '',
-						description: 'Country/region code for phone number',
-						placeholder: 'FR',
-							},
-							{
-						displayName: 'Selection Option IDs',
-						name: 'selectionIds',
-						type: 'string',
-						default: '',
-						description: 'Comma-separated list of option IDs for selection fields',
-						placeholder: 'option1,option2,option3',
-							},
-							{
-						displayName: 'Text Value',
-						name: 'textValue',
-						type: 'string',
-						default: '',
-						description: 'Text value for the field',
-							},
-					],
+						],
 					},
 				],
-				description: 'Custom fields to update for this record',
+				description: 'Custom fields to update for this record. Each custom field can only be added once per operation.',
 			},
 			// Create Record Section  
 			{
@@ -1839,29 +1816,89 @@ export class blue implements INodeType {
 				actualProjectId = projectIdParam;
 			}
 
-			if (!actualCompanyId || !actualProjectId) {
+			if (!actualCompanyId) {
 				return [{
-					name: 'Please Select a Company and Project First',
+					name: 'Please Select a Company First',
 					value: '',
 				}];
 			}
 
 			const credentials = await this.getCredentials('blueApi') as BlueCredentials;
 			
-			const query = `query ListCustomFields {
-				customFields(
-					filter: { projectId: "${actualProjectId}" }
-					sort: name_ASC
-					take: 50
-				) {
-					items {
-						id
-						uid
-						name
-						type
+			// Build query based on whether project is selected
+			let query;
+			if (actualProjectId) {
+				// Project-specific custom fields with advanced details
+				query = `query ListCustomFieldsAdvanced {
+					customFields(
+						filter: { 
+							projectId: "${actualProjectId}"
+						}
+						sort: name_ASC
+						skip: 0
+						take: 50
+					) {
+						items {
+							id
+							uid
+							name
+							type
+							position
+							description
+							
+							# Type-specific fields
+							min
+							max
+							currency
+							prefix
+							isDueDate
+							formula
+							
+							# Validation settings
+							editable
+							metadata
+							
+							# For SELECT types
+							customFieldOptions {
+								id
+								title
+								color
+								position
+							}
+						}
+						pageInfo {
+							totalItems
+							hasNextPage
+							hasPreviousPage
+						}
 					}
-				}
-			}`;
+				}`;
+			} else {
+				// Company-level custom fields (fallback - use simpler query as companyId filter may not support advanced features)
+				query = `query ListCustomFields {
+					customFields(
+						filter: { companyId: "${actualCompanyId}" }
+						sort: name_ASC
+						take: 50
+					) {
+						items {
+							id
+							uid
+							name
+							type
+							description
+							
+							# For SELECT types
+							customFieldOptions {
+								id
+								title
+								color
+								position
+							}
+						}
+					}
+				}`;
+			}
 
 			const requestOptions = {
 				method: 'POST' as const,
@@ -1871,6 +1908,7 @@ export class blue implements INodeType {
 					'X-Bloo-Token-Secret': credentials.tokenSecret,
 					'Content-Type': 'application/json',
 					'User-Agent': 'n8n-blue-node/1.0',
+					'X-Bloo-Company-ID': actualCompanyId,
 				},
 				body: {
 					query: query.trim(),
@@ -1889,10 +1927,41 @@ export class blue implements INodeType {
 			}
 
 			const customFields = response.data?.customFields?.items || [];
-			return customFields.map((field: any) => ({
-				name: `${field.name} (${field.type})`,
-				value: field.id,
-			}));
+			return customFields.map((field: any) => {
+				let displayName = `${field.name} (${field.type})`;
+				
+				// Add description if available
+				if (field.description && field.description.trim()) {
+					displayName += ` - ${field.description}`;
+				}
+				
+				// Add field-specific information
+				if (field.type === 'SELECT_SINGLE' || field.type === 'SELECT_MULTI') {
+					if (field.customFieldOptions && field.customFieldOptions.length > 0) {
+						const options = field.customFieldOptions
+							.sort((a: any, b: any) => (a.position || 0) - (b.position || 0))
+							.map((opt: any) => `${opt.title}:${opt.id}`)
+							.join(', ');
+						displayName += ` [Options: ${options}]`;
+					}
+				} else if (field.type === 'NUMBER') {
+					const constraints = [];
+					if (field.min !== undefined && field.min !== null) constraints.push(`min: ${field.min}`);
+					if (field.max !== undefined && field.max !== null) constraints.push(`max: ${field.max}`);
+					if (constraints.length > 0) {
+						displayName += ` [${constraints.join(', ')}]`;
+					}
+				} else if (field.type === 'CURRENCY' && field.currency) {
+					displayName += ` [Currency: ${field.currency}]`;
+				} else if (field.type === 'DATE' && field.isDueDate) {
+					displayName += ` [Due Date Field]`;
+				}
+				
+				return {
+					name: displayName,
+					value: field.id,
+				};
+			});
 
 		} catch (error) {
 			return [{
