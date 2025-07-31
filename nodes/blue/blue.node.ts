@@ -559,11 +559,6 @@ export class blue implements INodeType {
 									rows: 3,
 								},
 								default: '',
-								displayOptions: {
-									show: {
-										operation: ['updateRecord'],
-									},
-								},
 								description: 'Enter the text value for this field',
 							},
 							// Single select dropdown
@@ -572,11 +567,6 @@ export class blue implements INodeType {
 								name: 'selectValue',
 								type: 'options',
 								default: '',
-								displayOptions: {
-									show: {
-										operation: ['updateRecord'],
-									},
-								},
 								typeOptions: {
 									loadOptionsMethod: 'getCustomFieldOptions',
 									loadOptionsDependsOn: ['customFieldId'],
@@ -589,11 +579,6 @@ export class blue implements INodeType {
 								name: 'multiSelectValue',
 								type: 'multiOptions',
 								default: [],
-								displayOptions: {
-									show: {
-										operation: ['updateRecord'],
-									},
-								},
 								typeOptions: {
 									loadOptionsMethod: 'getCustomFieldOptions',
 									loadOptionsDependsOn: ['customFieldId'],
@@ -606,11 +591,6 @@ export class blue implements INodeType {
 								name: 'checkboxValue',
 								type: 'boolean',
 								default: false,
-								displayOptions: {
-									show: {
-										operation: ['updateRecord'],
-									},
-								},
 								description: 'Check this box to set the field value to true',
 							},
 							// Number field
@@ -619,11 +599,6 @@ export class blue implements INodeType {
 								name: 'numberValue',
 								type: 'number',
 								default: 0,
-								displayOptions: {
-									show: {
-										operation: ['updateRecord'],
-									},
-								},
 								description: 'Enter a numeric value',
 							},
 							// Date field
@@ -632,11 +607,6 @@ export class blue implements INodeType {
 								name: 'dateValue',
 								type: 'dateTime',
 								default: '',
-								displayOptions: {
-									show: {
-										operation: ['updateRecord'],
-									},
-								},
 								description: 'Select a date for this field',
 							},
 							// Location fields (latitude, longitude)
@@ -648,11 +618,6 @@ export class blue implements INodeType {
 									numberPrecision: 6,
 								},
 								default: 0,
-								displayOptions: {
-									show: {
-										operation: ['updateRecord'],
-									},
-								},
 								description: 'Enter the latitude coordinate',
 								placeholder: 'e.g., 37.7749',
 							},
@@ -664,11 +629,6 @@ export class blue implements INodeType {
 									numberPrecision: 6,
 								},
 								default: 0,
-								displayOptions: {
-									show: {
-										operation: ['updateRecord'],
-									},
-								},
 								description: 'Enter the longitude coordinate',
 								placeholder: 'e.g., -122.4194',
 							},
@@ -678,11 +638,6 @@ export class blue implements INodeType {
 								name: 'currencyCode',
 								type: 'string',
 								default: 'USD',
-								displayOptions: {
-									show: {
-										operation: ['updateRecord'],
-									},
-								},
 								description: 'Enter the currency code (e.g., USD, EUR, GBP)',
 								placeholder: 'USD',
 							},
@@ -694,11 +649,6 @@ export class blue implements INodeType {
 									numberPrecision: 2,
 								},
 								default: 0,
-								displayOptions: {
-									show: {
-										operation: ['updateRecord'],
-									},
-								},
 								description: 'Enter the monetary amount',
 								placeholder: '100.00',
 							},
@@ -708,11 +658,6 @@ export class blue implements INodeType {
 								name: 'countryValue',
 								type: 'string',
 								default: '',
-								displayOptions: {
-									show: {
-										operation: ['updateRecord'],
-									},
-								},
 								description: 'Enter the ISO 3166 country code (e.g., US, GB, JP)',
 								placeholder: 'US',
 							},
