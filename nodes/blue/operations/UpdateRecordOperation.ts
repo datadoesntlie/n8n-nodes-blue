@@ -79,24 +79,69 @@ export class UpdateRecordOperation extends BaseBlueOperation {
 			// Step 2: Update custom fields if any are provided
 			if (customFields && Array.isArray(customFields) && customFields.length > 0) {
 				for (const field of customFields) {
-					if (field.customFieldId && field.value && field.value.trim() !== '') {
-						const customFieldMutation = this.buildSimpleCustomFieldMutation(recordId, field.customFieldId, field.value);
+					if (field.customFieldId) {
+						// Extract field ID and type from the combined value
+						let fieldId = field.customFieldId;
+						let fieldType = '';
 						
-						try {
-							const customFieldResponse = await this.makeGraphQLRequest(context, customFieldMutation, {}, companyId, projectId);
-							const customFieldData = this.handleGraphQLResponse(
-								customFieldResponse,
-								context.additionalOptions.fullResponse as boolean,
-							);
-							results.push({ 
-								type: 'custom_field_update', 
-								fieldId: field.customFieldId, 
-								value: field.value,
-								data: customFieldData 
-							});
-						} catch (customFieldError) {
-							// If custom field fails, throw error with mutation details for debugging
-							throw new Error(`Custom field mutation failed for field ${field.customFieldId} with value "${field.value}". Mutation: ${customFieldMutation}. CompanyId: ${companyId}. ProjectId: ${projectId}. Error: ${customFieldError instanceof Error ? customFieldError.message : 'Unknown error'}`);
+						if (typeof field.customFieldId === 'string' && field.customFieldId.includes('|')) {
+							const parts = field.customFieldId.split('|');
+							fieldId = parts[0];
+							fieldType = parts[1];
+						}
+						
+						// Get the actual value based on field type
+						let actualValue = '';
+						
+						if (fieldType === 'TEXT_SINGLE' || fieldType === 'TEXT_MULTI' || fieldType === 'PHONE' || fieldType === 'EMAIL' || fieldType === 'URL' || fieldType === 'STAR_RATING' || fieldType === 'PERCENT') {
+							actualValue = field.textValue || '';
+						} else if (fieldType === 'SELECT_SINGLE') {
+							actualValue = field.selectValue || '';
+						} else if (fieldType === 'SELECT_MULTI') {
+							const multiValues = field.multiSelectValue || [];
+							actualValue = Array.isArray(multiValues) ? multiValues.join(',') : '';
+						} else if (fieldType === 'CHECKBOX') {
+							actualValue = field.checkboxValue ? 'true' : 'false';
+						} else if (fieldType === 'NUMBER') {
+							actualValue = field.numberValue ? field.numberValue.toString() : '';
+						} else if (fieldType === 'DATE') {
+							actualValue = field.dateValue || '';
+						} else if (fieldType === 'LOCATION') {
+							if (field.latitude !== undefined && field.longitude !== undefined) {
+								actualValue = `${field.latitude},${field.longitude}`;
+							}
+						} else if (fieldType === 'CURRENCY') {
+							if (field.currencyAmount !== undefined && field.currencyCode) {
+								actualValue = `${field.currencyCode}${field.currencyAmount}`;
+							}
+						} else if (fieldType === 'COUNTRY') {
+							actualValue = field.countryValue || '';
+						} else {
+							// Fallback to old value field if it exists
+							actualValue = field.value || '';
+						}
+						
+						// Only proceed if we have a value
+						if (actualValue && actualValue.toString().trim() !== '') {
+							const customFieldMutation = this.buildDynamicCustomFieldMutation(recordId, fieldId, fieldType, actualValue);
+							
+							try {
+								const customFieldResponse = await this.makeGraphQLRequest(context, customFieldMutation, {}, companyId, projectId);
+								const customFieldData = this.handleGraphQLResponse(
+									customFieldResponse,
+									context.additionalOptions.fullResponse as boolean,
+								);
+								results.push({ 
+									type: 'custom_field_update', 
+									fieldId: fieldId, 
+									fieldType: fieldType,
+									value: actualValue,
+									data: customFieldData 
+								});
+							} catch (customFieldError) {
+								// If custom field fails, throw error with mutation details for debugging
+								throw new Error(`Custom field mutation failed for field ${fieldId} (${fieldType}) with value "${actualValue}". Mutation: ${customFieldMutation}. CompanyId: ${companyId}. ProjectId: ${projectId}. Error: ${customFieldError instanceof Error ? customFieldError.message : 'Unknown error'}`);
+							}
 						}
 					}
 				}
@@ -188,52 +233,75 @@ export class UpdateRecordOperation extends BaseBlueOperation {
 		}`;
 	}
 
-	private buildSimpleCustomFieldMutation(recordId: string, fieldId: string, value: string): string {
-		// Parse different value formats based on the string content
+	private buildDynamicCustomFieldMutation(recordId: string, fieldId: string, fieldType: string, value: string): string {
 		const inputs = [`customFieldId: "${fieldId}"`, `todoId: "${recordId}"`];
 
-		// Handle different value formats
-		if (value.includes(',') && (value.includes('.') || /^-?\d+(\.\d+)?,-?\d+(\.\d+)?$/.test(value))) {
-			// Location format: "latitude,longitude"
-			const [lat, lng] = value.split(',').map(v => v.trim());
-			if (!isNaN(Number(lat)) && !isNaN(Number(lng))) {
-				inputs.push(`latitude: ${lat}`);
-				inputs.push(`longitude: ${lng}`);
-				return this.buildMutationQuery(inputs);
-			}
+		// Handle different field types with precise mutations
+		switch (fieldType) {
+			case 'TEXT_SINGLE':
+			case 'TEXT_MULTI':
+			case 'PHONE':
+			case 'EMAIL':
+			case 'URL':
+			case 'STAR_RATING':
+			case 'PERCENT':
+				inputs.push(`text: "${this.escapeGraphQLString(value)}"`);
+				break;
+				
+			case 'SELECT_SINGLE':
+				inputs.push(`customFieldOptionIds: ["${value}"]`);
+				break;
+				
+			case 'SELECT_MULTI':
+				const optionIds = value.split(',').map(id => id.trim()).filter(Boolean);
+				inputs.push(`customFieldOptionIds: [${optionIds.map(id => `"${id}"`).join(', ')}]`);
+				break;
+				
+			case 'CHECKBOX':
+				const boolValue = value.toLowerCase() === 'true' || value === '1';
+				inputs.push(`checked: ${boolValue}`);
+				break;
+				
+			case 'NUMBER':
+				inputs.push(`number: ${Number(value)}`);
+				break;
+				
+			case 'DATE':
+				// Ensure date is in proper ISO format
+				let formattedDate = value;
+				try {
+					const date = new Date(value);
+					if (!isNaN(date.getTime())) {
+						formattedDate = date.toISOString();
+					}
+				} catch (e) {
+					// Use original value if parsing fails
+				}
+				inputs.push(`text: "${formattedDate}"`);
+				break;
+				
+			case 'LOCATION':
+				const [lat, lng] = value.split(',').map(v => v.trim());
+				if (!isNaN(Number(lat)) && !isNaN(Number(lng))) {
+					inputs.push(`latitude: ${lat}`);
+					inputs.push(`longitude: ${lng}`);
+				}
+				break;
+				
+			case 'CURRENCY':
+				inputs.push(`text: "${this.escapeGraphQLString(value)}"`);
+				break;
+				
+			case 'COUNTRY':
+				inputs.push(`text: "${this.escapeGraphQLString(value)}"`);
+				break;
+				
+			default:
+				// Fallback to text for unknown types
+				inputs.push(`text: "${this.escapeGraphQLString(value)}"`);
+				break;
 		}
 
-		// Handle comma-separated values (multi-select options)
-		if (value.includes(',') && !value.includes('.')) {
-			const options = value.split(',').map(v => v.trim()).filter(Boolean);
-			if (options.length > 1) {
-				inputs.push(`customFieldOptionIds: [${options.map(id => `"${id}"`).join(', ')}]`);
-				return this.buildMutationQuery(inputs);
-			}
-		}
-
-		// Handle boolean-like values
-		const lowerValue = value.toLowerCase();
-		if (['true', 'false', '1', '0', 'checked', 'unchecked'].includes(lowerValue)) {
-			const boolValue = ['true', '1', 'checked'].includes(lowerValue);
-			inputs.push(`checked: ${boolValue}`);
-			return this.buildMutationQuery(inputs);
-		}
-
-		// Handle numeric values
-		if (!isNaN(Number(value)) && value.trim() !== '') {
-			inputs.push(`number: ${Number(value)}`);
-			return this.buildMutationQuery(inputs);
-		}
-
-		// Handle single option ID (if it looks like an option ID)
-		if (value.startsWith('option_') || /^[a-zA-Z0-9_-]+$/.test(value)) {
-			inputs.push(`customFieldOptionIds: ["${value}"]`);
-			return this.buildMutationQuery(inputs);
-		}
-
-		// Default: treat as text
-		inputs.push(`text: "${this.escapeGraphQLString(value)}"`);
 		return this.buildMutationQuery(inputs);
 	}
 
