@@ -79,6 +79,12 @@ export class blue implements INodeType {
 						action: 'Retrieve records todos tasks with advanced filtering',
 					},
 					{
+						name: 'Tag Record',
+						value: 'tagRecord',
+						description: 'Add tags to a record (todo/task)',
+						action: 'Add tags to a record todo task',
+					},
+					{
 						name: 'Update Record',
 						value: 'updateRecord',
 						description: 'Update a record (todo/task) with custom fields',
@@ -133,13 +139,29 @@ export class blue implements INodeType {
 				type: 'string',
 				displayOptions: {
 					hide: {
-						operation: ['getCompanies', 'updateRecord', 'createRecord', 'createProject', 'getProjects', 'getRecords'],
+						operation: ['getCompanies', 'updateRecord', 'createRecord', 'createProject', 'getProjects', 'getRecords', 'tagRecord'],
 					},
 				},
 				default: '',
 				required: true,
 				description: 'Company ID or slug to work with',
 				placeholder: 'e.g., your-company-slug',
+			},
+			{
+				displayName: 'Tag Names or IDs',
+				name: 'tagIds',
+				type: 'multiOptions',
+				displayOptions: {
+					show: {
+						operation: ['tagRecord'],
+					},
+				},
+				required: true,
+				description: 'Choose from the list, or specify IDs using an <a href="https://docs.n8n.io/code/expressions/">expression</a>',
+				default: [],
+				typeOptions: {
+					loadOptionsMethod: 'getProjectTags',
+				},
 			},
 			// Custom Query Section
 			{
@@ -319,7 +341,7 @@ export class blue implements INodeType {
 				default: { mode: 'list', value: '' },
 				displayOptions: {
 					show: {
-						operation: ['updateRecord'],
+						operation: ['updateRecord', 'tagRecord'],
 					},
 				},
 				required: true,
@@ -359,10 +381,10 @@ export class blue implements INodeType {
 				default: { mode: 'list', value: '' },
 				displayOptions: {
 					show: {
-						operation: ['updateRecord'],
+						operation: ['updateRecord', 'tagRecord'],
 					},
 				},
-				description: 'Project containing the record (optional)',
+				description: 'Project containing the record (required for tagRecord)',
 				modes: [
 					{
 						displayName: 'From List',
@@ -436,12 +458,12 @@ export class blue implements INodeType {
 				type: 'string',
 				displayOptions: {
 					show: {
-						operation: ['updateRecord'],
+						operation: ['updateRecord', 'tagRecord'],
 					},
 				},
 				default: '',
 				required: true,
-				description: 'ID of the record to update',
+				description: 'ID of the record to update or tag',
 				placeholder: 'e.g., record-123',
 			},
 			{
@@ -520,151 +542,256 @@ export class blue implements INodeType {
 				description: 'Color code for the record (optional)',
 				placeholder: 'e.g., #FF5733',
 			},
+			// Custom Field Selection
 			{
-				displayName: 'Custom Fields',
-				name: 'customFields',
-				type: 'fixedCollection',
-				placeholder: 'Add Custom Field',
+				displayName: 'Custom Field',
+				name: 'customFieldId',
+				type: 'options',
 				displayOptions: {
 					show: {
 						operation: ['updateRecord'],
 					},
 				},
-				default: {},
+				default: '',
+				description: 'Select the custom field to update. Choose from the list, or specify an ID using an <a href="https://docs.n8n.io/code/expressions/">expression</a>.',
 				typeOptions: {
-					multipleValues: true,
+					loadOptionsMethod: 'getCustomFieldsWithType',
 				},
-				options: [
-					{
-						name: 'customField',
-						displayName: 'Custom Field',
-						values: [
-							{
-								displayName: 'Custom Field',
-								name: 'customFieldId',
-								type: 'options',
-								default: '',
-								required: true,
-								description: 'Select the custom field to update',
-								typeOptions: {
-									loadOptionsMethod: 'getCustomFieldsWithType',
-								},
-							},
-							// Text fields (TEXT_SINGLE, TEXT_MULTI, PHONE, EMAIL, URL, STAR_RATING, PERCENT)
-							{
-								displayName: 'Text Value',
-								name: 'textValue',
-								type: 'string',
-								typeOptions: {
-									rows: 3,
-								},
-								default: '',
-								description: 'Enter the text value for this field',
-							},
-							// Single select dropdown
-							{
-								displayName: 'Select Option',
-								name: 'selectValue',
-								type: 'options',
-								default: '',
-								typeOptions: {
-									loadOptionsMethod: 'getCustomFieldOptions',
-									loadOptionsDependsOn: ['customFieldId'],
-								},
-								description: 'Select an option from the dropdown',
-							},
-							// Multi-select checkboxes
-							{
-								displayName: 'Select Options',
-								name: 'multiSelectValue',
-								type: 'multiOptions',
-								default: [],
-								typeOptions: {
-									loadOptionsMethod: 'getCustomFieldOptions',
-									loadOptionsDependsOn: ['customFieldId'],
-								},
-								description: 'Select multiple options',
-							},
-							// Checkbox for boolean fields
-							{
-								displayName: 'Checked',
-								name: 'checkboxValue',
-								type: 'boolean',
-								default: false,
-								description: 'Check this box to set the field value to true',
-							},
-							// Number field
-							{
-								displayName: 'Number Value',
-								name: 'numberValue',
-								type: 'number',
-								default: 0,
-								description: 'Enter a numeric value',
-							},
-							// Date field
-							{
-								displayName: 'Date Value',
-								name: 'dateValue',
-								type: 'dateTime',
-								default: '',
-								description: 'Select a date for this field',
-							},
-							// Location fields (latitude, longitude)
-							{
-								displayName: 'Latitude',
-								name: 'latitude',
-								type: 'number',
-								typeOptions: {
-									numberPrecision: 6,
-								},
-								default: 0,
-								description: 'Enter the latitude coordinate',
-								placeholder: 'e.g., 37.7749',
-							},
-							{
-								displayName: 'Longitude',
-								name: 'longitude',
-								type: 'number',
-								typeOptions: {
-									numberPrecision: 6,
-								},
-								default: 0,
-								description: 'Enter the longitude coordinate',
-								placeholder: 'e.g., -122.4194',
-							},
-							// Currency fields
-							{
-								displayName: 'Currency Code',
-								name: 'currencyCode',
-								type: 'string',
-								default: 'USD',
-								description: 'Enter the currency code (e.g., USD, EUR, GBP)',
-								placeholder: 'USD',
-							},
-							{
-								displayName: 'Currency Amount',
-								name: 'currencyAmount',
-								type: 'number',
-								typeOptions: {
-									numberPrecision: 2,
-								},
-								default: 0,
-								description: 'Enter the monetary amount',
-								placeholder: '100.00',
-							},
-							// Country field
-							{
-								displayName: 'Country Code',
-								name: 'countryValue',
-								type: 'string',
-								default: '',
-								description: 'Enter the ISO 3166 country code (e.g., US, GB, JP)',
-								placeholder: 'US',
-							},
+			},
+			// Text Value - For TEXT_SINGLE, TEXT_MULTI, EMAIL, URL, PHONE fields
+			{
+				displayName: 'Text Value',
+				name: 'customFieldTextValue',
+				type: 'string',
+				typeOptions: {
+					rows: 3,
+				},
+				displayOptions: {
+					show: {
+						operation: ['updateRecord'],
+						customFieldId: [
+							'={{$parameter["customFieldId"] && ($parameter["customFieldId"].includes("|TEXT_SINGLE") || $parameter["customFieldId"].includes("|TEXT_MULTI") || $parameter["customFieldId"].includes("|EMAIL") || $parameter["customFieldId"].includes("|URL") || $parameter["customFieldId"].includes("|PHONE")) ? $parameter["customFieldId"] : ""}}'
 						],
 					},
-				],
-				description: 'Custom fields to update for this record. Each custom field can only be added once per operation.',
+				},
+				default: '',
+				description: 'Enter the text value for TEXT_SINGLE, TEXT_MULTI, EMAIL, URL, or PHONE fields',
+			},
+			// Number Value - For NUMBER fields
+			{
+				displayName: 'Number Value',
+				name: 'customFieldNumberValue',
+				type: 'number',
+				displayOptions: {
+					show: {
+						operation: ['updateRecord'],
+						customFieldId: [
+							'={{$parameter["customFieldId"] && $parameter["customFieldId"].includes("|NUMBER") ? $parameter["customFieldId"] : ""}}'
+						],
+					},
+				},
+				default: 0,
+				description: 'Enter a numeric value for NUMBER fields',
+			},
+			// Percent Value - For PERCENT fields  
+			{
+				displayName: 'Percent Value (%)',
+				name: 'customFieldPercentValue',
+				type: 'number',
+				typeOptions: {
+					minValue: 0,
+					maxValue: 100,
+				},
+				displayOptions: {
+					show: {
+						operation: ['updateRecord'],
+						customFieldId: [
+							'={{$parameter["customFieldId"] && $parameter["customFieldId"].includes("|PERCENT") ? $parameter["customFieldId"] : ""}}'
+						],
+					},
+				},
+				default: 0,
+				description: 'Enter a percentage value (0-100) for PERCENT fields',
+			},
+			// Rating Value - For STAR_RATING fields
+			{
+				displayName: 'Rating Value',
+				name: 'customFieldRatingValue',
+				type: 'number',
+				displayOptions: {
+					show: {
+						operation: ['updateRecord'],
+						customFieldId: [
+							'={{$parameter["customFieldId"] && $parameter["customFieldId"].includes("|STAR_RATING") ? $parameter["customFieldId"] : ""}}'
+						],
+					},
+				},
+				default: 1,
+				description: 'Enter a rating value (will show min/max from field constraints)',
+				placeholder: 'e.g., 1-5 rating',
+			},
+			// Currency Value - For CURRENCY fields
+			{
+				displayName: 'Currency Value',
+				name: 'customFieldCurrencyValue',
+				type: 'string',
+				displayOptions: {
+					show: {
+						operation: ['updateRecord'],
+						customFieldId: [
+							'={{$parameter["customFieldId"] && $parameter["customFieldId"].includes("|CURRENCY") ? $parameter["customFieldId"] : ""}}'
+						],
+					},
+				},
+				default: '',
+				description: 'Amount with currency code before or after the number',
+				placeholder: 'e.g., USD100 or 100USD',
+			},
+			// Country Code - For COUNTRY fields
+			{
+				displayName: 'Country Code',
+				name: 'customFieldCountryValue',
+				type: 'string',
+				displayOptions: {
+					show: {
+						operation: ['updateRecord'],
+						customFieldId: [
+							'={{$parameter["customFieldId"] && $parameter["customFieldId"].includes("|COUNTRY") ? $parameter["customFieldId"] : ""}}'
+						],
+					},
+				},
+				default: '',
+				description: 'Enter the ISO 3166 country code',
+				placeholder: 'e.g., US, GB, JP',
+			},
+			// Date Picker - For DATE fields
+			{
+				displayName: 'Date Value',
+				name: 'customFieldDateValue',
+				type: 'dateTime',
+				displayOptions: {
+					show: {
+						operation: ['updateRecord'],
+						customFieldId: [
+							'={{$parameter["customFieldId"] && $parameter["customFieldId"].includes("|DATE") ? $parameter["customFieldId"] : ""}}'
+						],
+					},
+				},
+				default: '',
+				description: 'Select a date for DATE fields',
+			},
+			// Manual Date Input - For DATE fields (ISO 8601)
+			{
+				displayName: 'Manual Date Input (ISO 8601)',
+				name: 'customFieldDateManual',
+				type: 'string',
+				displayOptions: {
+					show: {
+						operation: ['updateRecord'],
+						customFieldId: [
+							'={{$parameter["customFieldId"] && $parameter["customFieldId"].includes("|DATE") ? $parameter["customFieldId"] : ""}}'
+						],
+					},
+				},
+				default: '',
+				description: 'Manually enter date in ISO 8601 format (alternative to date picker)',
+				placeholder: 'e.g., 2023-12-31T10:00:00Z',
+			},
+			// Location - Latitude
+			{
+				displayName: 'Latitude',
+				name: 'customFieldLatitude',
+				type: 'number',
+				typeOptions: {
+					numberPrecision: 6,
+				},
+				displayOptions: {
+					show: {
+						operation: ['updateRecord'],
+						customFieldId: [
+							'={{$parameter["customFieldId"] && $parameter["customFieldId"].includes("|LOCATION") ? $parameter["customFieldId"] : ""}}'
+						],
+					},
+				},
+				default: 0,
+				description: 'Enter the latitude coordinate for LOCATION fields',
+				placeholder: 'e.g., 37.7749',
+			},
+			// Location - Longitude
+			{
+				displayName: 'Longitude',
+				name: 'customFieldLongitude',
+				type: 'number',
+				typeOptions: {
+					numberPrecision: 6,
+				},
+				displayOptions: {
+					show: {
+						operation: ['updateRecord'],
+						customFieldId: [
+							'={{$parameter["customFieldId"] && $parameter["customFieldId"].includes("|LOCATION") ? $parameter["customFieldId"] : ""}}'
+						],
+					},
+				},
+				default: 0,
+				description: 'Enter the longitude coordinate for LOCATION fields',
+				placeholder: 'e.g., -122.4194',
+			},
+			// Checkbox - For CHECKBOX fields
+			{
+				displayName: 'Checked',
+				name: 'customFieldCheckboxValue',
+				type: 'boolean',
+				displayOptions: {
+					show: {
+						operation: ['updateRecord'],
+						customFieldId: [
+							'={{$parameter["customFieldId"] && $parameter["customFieldId"].includes("|CHECKBOX") ? $parameter["customFieldId"] : ""}}'
+						],
+					},
+				},
+				default: false,
+				description: 'Whether to check this checkbox for CHECKBOX fields',
+			},
+			// Single Select - For SELECT_SINGLE fields
+			{
+				displayName: 'Select Option',
+				name: 'customFieldSelectValue',
+				type: 'options',
+				displayOptions: {
+					show: {
+						operation: ['updateRecord'],
+						customFieldId: [
+							'={{$parameter["customFieldId"] && $parameter["customFieldId"].includes("|SELECT_SINGLE") ? $parameter["customFieldId"] : ""}}'
+						],
+					},
+				},
+				default: '',
+				typeOptions: {
+					loadOptionsMethod: 'getCustomFieldOptions',
+					loadOptionsDependsOn: ['customFieldId'],
+				},
+				description: 'Select an option for SELECT_SINGLE fields. Choose from the list, or specify an ID using an <a href="https://docs.n8n.io/code/expressions/">expression</a>.',
+			},
+			// Multi Select - For SELECT_MULTI fields
+			{
+				displayName: 'Select Options',
+				name: 'customFieldMultiSelectValue',
+				type: 'multiOptions',
+				displayOptions: {
+					show: {
+						operation: ['updateRecord'],
+						customFieldId: [
+							'={{$parameter["customFieldId"] && $parameter["customFieldId"].includes("|SELECT_MULTI") ? $parameter["customFieldId"] : ""}}'
+						],
+					},
+				},
+				default: [],
+				typeOptions: {
+					loadOptionsMethod: 'getCustomFieldOptions',
+					loadOptionsDependsOn: ['customFieldId'],
+				},
+				description: 'Select multiple options for SELECT_MULTI fields. Choose from the list, or specify IDs using an <a href="https://docs.n8n.io/code/expressions/">expression</a>.',
 			},
 			// Create Record Section  
 			{

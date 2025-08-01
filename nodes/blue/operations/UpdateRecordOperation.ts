@@ -18,13 +18,13 @@ export class UpdateRecordOperation extends BaseBlueOperation {
 			}
 			
 			// Extract projectId from resourceLocator format (might be needed for custom fields)
-		const projectIdParam = context.executeFunctions.getNodeParameter('projectId', context.itemIndex, '') as any;
-		let projectId = '';
-		if (typeof projectIdParam === 'object' && projectIdParam.value) {
-			projectId = projectIdParam.value;
-		} else if (typeof projectIdParam === 'string') {
-			projectId = projectIdParam;
-		}
+			const projectIdParam = context.executeFunctions.getNodeParameter('projectId', context.itemIndex, '') as any;
+			let projectId = '';
+			if (typeof projectIdParam === 'object' && projectIdParam.value) {
+				projectId = projectIdParam.value;
+			} else if (typeof projectIdParam === 'string') {
+				projectId = projectIdParam;
+			}
 			
 			// Basic fields
 			const title = context.executeFunctions.getNodeParameter('title', context.itemIndex, '') as string;
@@ -42,9 +42,8 @@ export class UpdateRecordOperation extends BaseBlueOperation {
 			const position = context.executeFunctions.getNodeParameter('position', context.itemIndex, '') as string;
 			const color = context.executeFunctions.getNodeParameter('color', context.itemIndex, '') as string;
 			
-			// Custom fields collection
-			const customFieldsCollection = context.executeFunctions.getNodeParameter('customFields', context.itemIndex, {}) as any;
-			const customFields = customFieldsCollection.customField || [];
+			// Custom field - now individual field instead of collection
+			const customFieldId = context.executeFunctions.getNodeParameter('customFieldId', context.itemIndex, '') as string;
 
 			const results = [];
 
@@ -76,73 +75,78 @@ export class UpdateRecordOperation extends BaseBlueOperation {
 				results.push({ type: 'core_update', data: coreData });
 			}
 
-			// Step 2: Update custom fields if any are provided
-			if (customFields && Array.isArray(customFields) && customFields.length > 0) {
-				for (const field of customFields) {
-					if (field.customFieldId) {
-						// Extract field ID and type from the combined value
-						let fieldId = field.customFieldId;
-						let fieldType = '';
-						
-						if (typeof field.customFieldId === 'string' && field.customFieldId.includes('|')) {
-							const parts = field.customFieldId.split('|');
-							fieldId = parts[0];
-							fieldType = parts[1];
-						}
-						
-						// Get the actual value based on field type
-						let actualValue = '';
-						
-						if (fieldType === 'TEXT_SINGLE' || fieldType === 'TEXT_MULTI' || fieldType === 'PHONE' || fieldType === 'EMAIL' || fieldType === 'URL' || fieldType === 'STAR_RATING' || fieldType === 'PERCENT') {
-							actualValue = field.textValue || '';
-						} else if (fieldType === 'SELECT_SINGLE') {
-							actualValue = field.selectValue || '';
-						} else if (fieldType === 'SELECT_MULTI') {
-							const multiValues = field.multiSelectValue || [];
-							actualValue = Array.isArray(multiValues) ? multiValues.join(',') : '';
-						} else if (fieldType === 'CHECKBOX') {
-							actualValue = field.checkboxValue ? 'true' : 'false';
-						} else if (fieldType === 'NUMBER') {
-							actualValue = field.numberValue ? field.numberValue.toString() : '';
-						} else if (fieldType === 'DATE') {
-							actualValue = field.dateValue || '';
-						} else if (fieldType === 'LOCATION') {
-							if (field.latitude !== undefined && field.longitude !== undefined) {
-								actualValue = `${field.latitude},${field.longitude}`;
-							}
-						} else if (fieldType === 'CURRENCY') {
-							if (field.currencyAmount !== undefined && field.currencyCode) {
-								actualValue = `${field.currencyCode}${field.currencyAmount}`;
-							}
-						} else if (fieldType === 'COUNTRY') {
-							actualValue = field.countryValue || '';
-						} else {
-							// Fallback to old value field if it exists
-							actualValue = field.value || '';
-						}
-						
-						// Only proceed if we have a value
-						if (actualValue && actualValue.toString().trim() !== '') {
-							const customFieldMutation = this.buildDynamicCustomFieldMutation(recordId, fieldId, fieldType, actualValue);
-							
-							try {
-								const customFieldResponse = await this.makeGraphQLRequest(context, customFieldMutation, {}, companyId, projectId);
-								const customFieldData = this.handleGraphQLResponse(
-									customFieldResponse,
-									context.additionalOptions.fullResponse as boolean,
-								);
-								results.push({ 
-									type: 'custom_field_update', 
-									fieldId: fieldId, 
-									fieldType: fieldType,
-									value: actualValue,
-									data: customFieldData 
-								});
-							} catch (customFieldError) {
-								// If custom field fails, throw error with mutation details for debugging
-								throw new Error(`Custom field mutation failed for field ${fieldId} (${fieldType}) with value "${actualValue}". Mutation: ${customFieldMutation}. CompanyId: ${companyId}. ProjectId: ${projectId}. Error: ${customFieldError instanceof Error ? customFieldError.message : 'Unknown error'}`);
-							}
-						}
+			// Step 2: Update custom field if provided (new single field structure)
+			if (customFieldId && customFieldId.trim() !== '') {
+				// Extract field ID and type from the combined value
+				let fieldId = customFieldId;
+				let fieldType = '';
+				
+				if (typeof customFieldId === 'string' && customFieldId.includes('|')) {
+					const parts = customFieldId.split('|');
+					fieldId = parts[0];
+					fieldType = parts[1];
+				}
+				
+				// Get the actual value based on field type and available parameters
+				let actualValue = '';
+				
+				// Check each possible field type and get the corresponding value
+				if (fieldType === 'TEXT_SINGLE' || fieldType === 'TEXT_MULTI' || fieldType === 'PHONE' || fieldType === 'EMAIL' || fieldType === 'URL') {
+					actualValue = context.executeFunctions.getNodeParameter('customFieldTextValue', context.itemIndex, '') as string;
+				} else if (fieldType === 'NUMBER') {
+					const numValue = context.executeFunctions.getNodeParameter('customFieldNumberValue', context.itemIndex, 0) as number;
+					actualValue = numValue !== 0 ? numValue.toString() : '';
+				} else if (fieldType === 'PERCENT') {
+					const percentValue = context.executeFunctions.getNodeParameter('customFieldPercentValue', context.itemIndex, 0) as number;
+					actualValue = percentValue !== 0 ? percentValue.toString() : '';
+				} else if (fieldType === 'STAR_RATING') {
+					const ratingValue = context.executeFunctions.getNodeParameter('customFieldRatingValue', context.itemIndex, 0) as number;
+					actualValue = ratingValue !== 0 ? ratingValue.toString() : '';
+				} else if (fieldType === 'CURRENCY') {
+					actualValue = context.executeFunctions.getNodeParameter('customFieldCurrencyValue', context.itemIndex, '') as string;
+				} else if (fieldType === 'COUNTRY') {
+					actualValue = context.executeFunctions.getNodeParameter('customFieldCountryValue', context.itemIndex, '') as string;
+				} else if (fieldType === 'DATE') {
+					// Try date picker first, then manual input
+					const dateValue = context.executeFunctions.getNodeParameter('customFieldDateValue', context.itemIndex, '') as string;
+					const manualDateValue = context.executeFunctions.getNodeParameter('customFieldDateManual', context.itemIndex, '') as string;
+					actualValue = dateValue || manualDateValue || '';
+				} else if (fieldType === 'LOCATION') {
+					const latitude = context.executeFunctions.getNodeParameter('customFieldLatitude', context.itemIndex, 0) as number;
+					const longitude = context.executeFunctions.getNodeParameter('customFieldLongitude', context.itemIndex, 0) as number;
+					if (latitude !== 0 || longitude !== 0) {
+						actualValue = `${latitude},${longitude}`;
+					}
+				} else if (fieldType === 'CHECKBOX') {
+					const checkboxValue = context.executeFunctions.getNodeParameter('customFieldCheckboxValue', context.itemIndex, false) as boolean;
+					actualValue = checkboxValue ? 'true' : 'false';
+				} else if (fieldType === 'SELECT_SINGLE') {
+					actualValue = context.executeFunctions.getNodeParameter('customFieldSelectValue', context.itemIndex, '') as string;
+				} else if (fieldType === 'SELECT_MULTI') {
+					const multiValues = context.executeFunctions.getNodeParameter('customFieldMultiSelectValue', context.itemIndex, []) as string[];
+					actualValue = Array.isArray(multiValues) ? multiValues.join(',') : '';
+				}
+				
+				// Only proceed if we have a value
+				if (actualValue && actualValue.toString().trim() !== '') {
+					const customFieldMutation = this.buildDynamicCustomFieldMutation(recordId, fieldId, fieldType, actualValue);
+					
+					try {
+						const customFieldResponse = await this.makeGraphQLRequest(context, customFieldMutation, {}, companyId, projectId);
+						const customFieldData = this.handleGraphQLResponse(
+							customFieldResponse,
+							context.additionalOptions.fullResponse as boolean,
+						);
+						results.push({ 
+							type: 'custom_field_update', 
+							fieldId: fieldId, 
+							fieldType: fieldType,
+							value: actualValue,
+							data: customFieldData 
+						});
+					} catch (customFieldError) {
+						// If custom field fails, throw error with mutation details for debugging
+						throw new Error(`Custom field mutation failed for field ${fieldId} (${fieldType}) with value "${actualValue}". Mutation: ${customFieldMutation}. CompanyId: ${companyId}. ProjectId: ${projectId}. Error: ${customFieldError instanceof Error ? customFieldError.message : 'Unknown error'}`);
 					}
 				}
 			}
@@ -218,7 +222,7 @@ export class UpdateRecordOperation extends BaseBlueOperation {
 			editTodo(
 				input: {
 					todoId: "${recordId}"${inputs.length > 0 ? ',' : ''}
-					${inputs.join(',\n\t\t\t\t\t')}
+					${inputs.join(',\\n\\t\\t\\t\\t\\t')}
 				}
 			) {
 				id
@@ -309,14 +313,13 @@ export class UpdateRecordOperation extends BaseBlueOperation {
 		return `mutation {
 			setTodoCustomField(
 				input: {
-					${inputs.join(',\n\t\t\t\t\t')}
+					${inputs.join(',\\n\\t\\t\\t\\t\\t')}
 				}
 			)
 		}`;
 	}
 
-
 	private escapeGraphQLString(str: string): string {
-		return str.replace(/"/g, '\\"').replace(/\n/g, '\\n').replace(/\r/g, '\\r');
+		return str.replace(/"/g, '\\\\"').replace(/\\n/g, '\\\\n').replace(/\\r/g, '\\\\r');
 	}
 }

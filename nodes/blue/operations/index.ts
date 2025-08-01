@@ -6,6 +6,7 @@ import { UpdateRecordOperation } from './UpdateRecordOperation';
 import { CreateRecordOperation } from './CreateRecordOperation';
 import { CreateProjectOperation } from './CreateProjectOperation';
 import { CustomQueryOperation } from './CustomQueryOperation';
+import { TagRecordOperation } from './TagRecordOperation';
 
 export const operations: Record<string, BaseBlueOperation> = {
 	getCompanies: new GetCompaniesOperation(),
@@ -15,6 +16,7 @@ export const operations: Record<string, BaseBlueOperation> = {
 	createRecord: new CreateRecordOperation(),
 	createProject: new CreateProjectOperation(),
 	customQuery: new CustomQueryOperation(),
+	tagRecord: new TagRecordOperation(),
 };
 
 export {
@@ -26,4 +28,5 @@ export {
 	CreateRecordOperation,
 	CreateProjectOperation,
 	CustomQueryOperation,
+	TagRecordOperation,
 };
