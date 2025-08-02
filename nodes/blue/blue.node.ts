@@ -593,7 +593,9 @@ export class blue implements INodeType {
 				displayOptions: {
 					show: {
 						operation: ['updateRecord'],
-						customFieldId: ['/.*(TEXT_SINGLE|TEXT_MULTI|EMAIL|URL|PHONE).*/'],
+					},
+					hide: {
+						customFieldId: [''],
 					},
 				},
 				default: '',

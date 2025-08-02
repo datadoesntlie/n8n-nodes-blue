@@ -42,8 +42,14 @@ export class UpdateRecordOperation extends BaseBlueOperation {
 			const position = context.executeFunctions.getNodeParameter('position', context.itemIndex, '') as string;
 			const color = context.executeFunctions.getNodeParameter('color', context.itemIndex, '') as string;
 			
-			// Custom field - now individual field instead of collection
-			const customFieldId = context.executeFunctions.getNodeParameter('customFieldId', context.itemIndex, '') as string;
+			// Custom field - now individual field instead of collection (resourceLocator format)
+			const customFieldIdParam = context.executeFunctions.getNodeParameter('customFieldId', context.itemIndex, '') as any;
+			let customFieldId = '';
+			if (typeof customFieldIdParam === 'object' && customFieldIdParam.value) {
+				customFieldId = customFieldIdParam.value;
+			} else if (typeof customFieldIdParam === 'string') {
+				customFieldId = customFieldIdParam;
+			}
 
 			const results = [];
 
@@ -222,7 +228,7 @@ export class UpdateRecordOperation extends BaseBlueOperation {
 			editTodo(
 				input: {
 					todoId: "${recordId}"${inputs.length > 0 ? ',' : ''}
-					${inputs.join(',\\n\\t\\t\\t\\t\\t')}
+					${inputs.join(',\n\t\t\t\t\t')}
 				}
 			) {
 				id
@@ -313,7 +319,7 @@ export class UpdateRecordOperation extends BaseBlueOperation {
 		return `mutation {
 			setTodoCustomField(
 				input: {
-					${inputs.join(',\\n\\t\\t\\t\\t\\t')}
+					${inputs.join(',\n\t\t\t\t\t')}
 				}
 			)
 		}`;
