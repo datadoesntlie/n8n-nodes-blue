@@ -546,17 +546,41 @@ export class blue implements INodeType {
 			{
 				displayName: 'Custom Field',
 				name: 'customFieldId',
-				type: 'options',
+				type: 'resourceLocator',
+				default: { mode: 'list', value: '' },
 				displayOptions: {
 					show: {
 						operation: ['updateRecord'],
 					},
 				},
-				default: '',
-				description: 'Select the custom field to update. Choose from the list, or specify an ID using an <a href="https://docs.n8n.io/code/expressions/">expression</a>.',
-				typeOptions: {
-					loadOptionsMethod: 'getCustomFieldsWithType',
-				},
+				description: 'Custom field to update',
+				modes: [
+					{
+						displayName: 'From List',
+						name: 'list',
+						type: 'list',
+						placeholder: 'Select a custom field...',
+						typeOptions: {
+							searchListMethod: 'searchCustomFields',
+							searchable: true,
+						},
+					},
+					{
+						displayName: 'By ID',
+						name: 'id',
+						type: 'string',
+						placeholder: 'e.g., field-123|TEXT_SINGLE',
+						validation: [
+							{
+								type: 'regex',
+								properties: {
+									regex: '.+',
+									errorMessage: 'Custom Field ID cannot be empty',
+								},
+							},
+						],
+					},
+				],
 			},
 			// Text Value - For TEXT_SINGLE, TEXT_MULTI, EMAIL, URL, PHONE fields
 			{
@@ -569,9 +593,7 @@ export class blue implements INodeType {
 				displayOptions: {
 					show: {
 						operation: ['updateRecord'],
-						customFieldId: [
-							'={{$parameter["customFieldId"] && ($parameter["customFieldId"].includes("|TEXT_SINGLE") || $parameter["customFieldId"].includes("|TEXT_MULTI") || $parameter["customFieldId"].includes("|EMAIL") || $parameter["customFieldId"].includes("|URL") || $parameter["customFieldId"].includes("|PHONE")) ? $parameter["customFieldId"] : ""}}'
-						],
+						customFieldId: ['/.*(TEXT_SINGLE|TEXT_MULTI|EMAIL|URL|PHONE).*/'],
 					},
 				},
 				default: '',
@@ -585,9 +607,7 @@ export class blue implements INodeType {
 				displayOptions: {
 					show: {
 						operation: ['updateRecord'],
-						customFieldId: [
-							'={{$parameter["customFieldId"] && $parameter["customFieldId"].includes("|NUMBER") ? $parameter["customFieldId"] : ""}}'
-						],
+						customFieldId: ['/.*\\|NUMBER.*/'],
 					},
 				},
 				default: 0,
@@ -605,9 +625,7 @@ export class blue implements INodeType {
 				displayOptions: {
 					show: {
 						operation: ['updateRecord'],
-						customFieldId: [
-							'={{$parameter["customFieldId"] && $parameter["customFieldId"].includes("|PERCENT") ? $parameter["customFieldId"] : ""}}'
-						],
+						customFieldId: ['/.*\\|PERCENT.*/'],
 					},
 				},
 				default: 0,
@@ -621,9 +639,7 @@ export class blue implements INodeType {
 				displayOptions: {
 					show: {
 						operation: ['updateRecord'],
-						customFieldId: [
-							'={{$parameter["customFieldId"] && $parameter["customFieldId"].includes("|STAR_RATING") ? $parameter["customFieldId"] : ""}}'
-						],
+						customFieldId: ['/.*\\|STAR_RATING.*/'],
 					},
 				},
 				default: 1,
@@ -638,9 +654,7 @@ export class blue implements INodeType {
 				displayOptions: {
 					show: {
 						operation: ['updateRecord'],
-						customFieldId: [
-							'={{$parameter["customFieldId"] && $parameter["customFieldId"].includes("|CURRENCY") ? $parameter["customFieldId"] : ""}}'
-						],
+						customFieldId: ['/.*\\|CURRENCY.*/'],
 					},
 				},
 				default: '',
@@ -655,9 +669,7 @@ export class blue implements INodeType {
 				displayOptions: {
 					show: {
 						operation: ['updateRecord'],
-						customFieldId: [
-							'={{$parameter["customFieldId"] && $parameter["customFieldId"].includes("|COUNTRY") ? $parameter["customFieldId"] : ""}}'
-						],
+						customFieldId: ['/.*\\|COUNTRY.*/'],
 					},
 				},
 				default: '',
@@ -672,9 +684,7 @@ export class blue implements INodeType {
 				displayOptions: {
 					show: {
 						operation: ['updateRecord'],
-						customFieldId: [
-							'={{$parameter["customFieldId"] && $parameter["customFieldId"].includes("|DATE") ? $parameter["customFieldId"] : ""}}'
-						],
+						customFieldId: ['/.*\\|DATE.*/'],
 					},
 				},
 				default: '',
@@ -688,9 +698,7 @@ export class blue implements INodeType {
 				displayOptions: {
 					show: {
 						operation: ['updateRecord'],
-						customFieldId: [
-							'={{$parameter["customFieldId"] && $parameter["customFieldId"].includes("|DATE") ? $parameter["customFieldId"] : ""}}'
-						],
+						customFieldId: ['/.*\\|DATE.*/'],
 					},
 				},
 				default: '',
@@ -708,9 +716,7 @@ export class blue implements INodeType {
 				displayOptions: {
 					show: {
 						operation: ['updateRecord'],
-						customFieldId: [
-							'={{$parameter["customFieldId"] && $parameter["customFieldId"].includes("|LOCATION") ? $parameter["customFieldId"] : ""}}'
-						],
+						customFieldId: ['={{$parameter["customFieldId"] && $parameter["customFieldId"].value && $parameter["customFieldId"].value.includes("|LOCATION") ? $parameter["customFieldId"].value : ""}}'],
 					},
 				},
 				default: 0,
@@ -728,9 +734,7 @@ export class blue implements INodeType {
 				displayOptions: {
 					show: {
 						operation: ['updateRecord'],
-						customFieldId: [
-							'={{$parameter["customFieldId"] && $parameter["customFieldId"].includes("|LOCATION") ? $parameter["customFieldId"] : ""}}'
-						],
+						customFieldId: ['={{$parameter["customFieldId"] && $parameter["customFieldId"].value && $parameter["customFieldId"].value.includes("|LOCATION") ? $parameter["customFieldId"].value : ""}}'],
 					},
 				},
 				default: 0,
@@ -745,9 +749,7 @@ export class blue implements INodeType {
 				displayOptions: {
 					show: {
 						operation: ['updateRecord'],
-						customFieldId: [
-							'={{$parameter["customFieldId"] && $parameter["customFieldId"].includes("|CHECKBOX") ? $parameter["customFieldId"] : ""}}'
-						],
+						customFieldId: ['/.*\\|CHECKBOX.*/'],
 					},
 				},
 				default: false,
@@ -755,15 +757,13 @@ export class blue implements INodeType {
 			},
 			// Single Select - For SELECT_SINGLE fields
 			{
-				displayName: 'Select Option',
+				displayName: 'Select Option Name or ID',
 				name: 'customFieldSelectValue',
 				type: 'options',
 				displayOptions: {
 					show: {
 						operation: ['updateRecord'],
-						customFieldId: [
-							'={{$parameter["customFieldId"] && $parameter["customFieldId"].includes("|SELECT_SINGLE") ? $parameter["customFieldId"] : ""}}'
-						],
+						customFieldId: ['/.*\\|SELECT_SINGLE.*/'],
 					},
 				},
 				default: '',
@@ -775,15 +775,13 @@ export class blue implements INodeType {
 			},
 			// Multi Select - For SELECT_MULTI fields
 			{
-				displayName: 'Select Options',
+				displayName: 'Select Option Names or IDs',
 				name: 'customFieldMultiSelectValue',
 				type: 'multiOptions',
 				displayOptions: {
 					show: {
 						operation: ['updateRecord'],
-						customFieldId: [
-							'={{$parameter["customFieldId"] && $parameter["customFieldId"].includes("|SELECT_MULTI") ? $parameter["customFieldId"] : ""}}'
-						],
+						customFieldId: ['/.*\\|SELECT_MULTI.*/'],
 					},
 				},
 				default: [],
@@ -1811,6 +1809,7 @@ export class blue implements INodeType {
 					'X-Bloo-Token-Secret': credentials.tokenSecret,
 					'Content-Type': 'application/json',
 					'User-Agent': 'n8n-blue-node/1.0',
+					'X-Bloo-Company-ID': actualCompanyId,
 				},
 				body: {
 					query,
@@ -1834,7 +1833,7 @@ export class blue implements INodeType {
 				)
 				.map((field: any) => ({
 					name: `${field.name} (${field.type})`,
-					value: field.id,
+					value: `${field.id}|${field.type}`,
 				}));
 
 			return { results };
@@ -1977,6 +1976,7 @@ export class blue implements INodeType {
 					'X-Bloo-Token-Secret': credentials.tokenSecret,
 					'Content-Type': 'application/json',
 					'User-Agent': 'n8n-blue-node/1.0',
+					'X-Bloo-Company-ID': actualCompanyId,
 				},
 				body: {
 					query: query.trim(),
@@ -2420,7 +2420,7 @@ export class blue implements INodeType {
 			const customField = response.data?.customField;
 			if (!customField || !customField.customFieldOptions) {
 				return [{
-					name: 'No options available for this field',
+					name: 'No Options Available for This Field',
 					value: '',
 				}];
 			}
