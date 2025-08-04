@@ -609,11 +609,13 @@ export class blue implements INodeType {
 				displayOptions: {
 					show: {
 						operation: ['updateRecord'],
-						customFieldId: ['/.*\\|NUMBER.*/'],
+					},
+					hide: {
+						customFieldId: [''],
 					},
 				},
 				default: 0,
-				description: 'Enter a numeric value for NUMBER fields',
+				description: 'Enter a numeric value for NUMBER, CURRENCY, PERCENT, or STAR_RATING fields',
 			},
 			// Percent Value - For PERCENT fields  
 			{
@@ -627,7 +629,9 @@ export class blue implements INodeType {
 				displayOptions: {
 					show: {
 						operation: ['updateRecord'],
-						customFieldId: ['/.*\\|PERCENT.*/'],
+					},
+					hide: {
+						customFieldId: [''],
 					},
 				},
 				default: 0,
@@ -641,7 +645,9 @@ export class blue implements INodeType {
 				displayOptions: {
 					show: {
 						operation: ['updateRecord'],
-						customFieldId: ['/.*\\|STAR_RATING.*/'],
+					},
+					hide: {
+						customFieldId: [''],
 					},
 				},
 				default: 1,
@@ -656,7 +662,9 @@ export class blue implements INodeType {
 				displayOptions: {
 					show: {
 						operation: ['updateRecord'],
-						customFieldId: ['/.*\\|CURRENCY.*/'],
+					},
+					hide: {
+						customFieldId: [''],
 					},
 				},
 				default: '',

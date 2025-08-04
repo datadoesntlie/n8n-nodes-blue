@@ -253,9 +253,13 @@ export class UpdateRecordOperation extends BaseBlueOperation {
 			case 'PHONE':
 			case 'EMAIL':
 			case 'URL':
-			case 'STAR_RATING':
-			case 'PERCENT':
 				inputs.push(`text: "${this.escapeGraphQLString(value)}"`);
+				break;
+				
+			case 'NUMBER':
+			case 'PERCENT':
+			case 'STAR_RATING':
+				inputs.push(`number: ${Number(value)}`);
 				break;
 				
 			case 'SELECT_SINGLE':
@@ -270,10 +274,6 @@ export class UpdateRecordOperation extends BaseBlueOperation {
 			case 'CHECKBOX':
 				const boolValue = value.toLowerCase() === 'true' || value === '1';
 				inputs.push(`checked: ${boolValue}`);
-				break;
-				
-			case 'NUMBER':
-				inputs.push(`number: ${Number(value)}`);
 				break;
 				
 			case 'DATE':
