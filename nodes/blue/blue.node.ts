@@ -582,82 +582,10 @@ export class blue implements INodeType {
 					},
 				],
 			},
-			// Text Value - For TEXT_SINGLE, TEXT_MULTI, EMAIL, URL, PHONE fields
+			// Universal Custom Field Value
 			{
-				displayName: 'Text Value',
-				name: 'customFieldTextValue',
-				type: 'string',
-				typeOptions: {
-					rows: 3,
-				},
-				displayOptions: {
-					show: {
-						operation: ['updateRecord'],
-					},
-					hide: {
-						customFieldId: [''],
-					},
-				},
-				default: '',
-				description: 'Enter the text value for TEXT_SINGLE, TEXT_MULTI, EMAIL, URL, or PHONE fields',
-			},
-			// Number Value - For NUMBER fields
-			{
-				displayName: 'Number Value',
-				name: 'customFieldNumberValue',
-				type: 'number',
-				displayOptions: {
-					show: {
-						operation: ['updateRecord'],
-					},
-					hide: {
-						customFieldId: [''],
-					},
-				},
-				default: 0,
-				description: 'Enter a numeric value for NUMBER, CURRENCY, PERCENT, or STAR_RATING fields',
-			},
-			// Percent Value - For PERCENT fields  
-			{
-				displayName: 'Percent Value (%)',
-				name: 'customFieldPercentValue',
-				type: 'number',
-				typeOptions: {
-					minValue: 0,
-					maxValue: 100,
-				},
-				displayOptions: {
-					show: {
-						operation: ['updateRecord'],
-					},
-					hide: {
-						customFieldId: [''],
-					},
-				},
-				default: 0,
-				description: 'Enter a percentage value (0-100) for PERCENT fields',
-			},
-			// Rating Value - For STAR_RATING fields
-			{
-				displayName: 'Rating Value',
-				name: 'customFieldRatingValue',
-				type: 'number',
-				displayOptions: {
-					show: {
-						operation: ['updateRecord'],
-					},
-					hide: {
-						customFieldId: [''],
-					},
-				},
-				default: 1,
-				description: 'Enter a rating value (will show min/max from field constraints)',
-				placeholder: 'e.g., 1-5 rating',
-			},
-			// Currency Value - For CURRENCY fields
-			{
-				displayName: 'Currency Value',
-				name: 'customFieldCurrencyValue',
+				displayName: 'Custom Field Value',
+				name: 'customFieldValue',
 				type: 'string',
 				displayOptions: {
 					show: {
@@ -668,8 +596,8 @@ export class blue implements INodeType {
 					},
 				},
 				default: '',
-				description: 'Amount with currency code before or after the number',
-				placeholder: 'e.g., USD100 or 100USD',
+				description: 'Enter the value for the custom field (text, number, currency, etc.)',
+				placeholder: 'e.g., "Sample Text", "100", "100 USD", "USD 100", "5" for rating',
 			},
 			// Country Code - For COUNTRY fields
 			{

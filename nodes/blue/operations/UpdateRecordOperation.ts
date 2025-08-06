@@ -96,42 +96,8 @@ export class UpdateRecordOperation extends BaseBlueOperation {
 				// Get the actual value based on field type and available parameters
 				let actualValue = '';
 				
-				// Check each possible field type and get the corresponding value
-				if (fieldType === 'TEXT_SINGLE' || fieldType === 'TEXT_MULTI' || fieldType === 'PHONE' || fieldType === 'EMAIL' || fieldType === 'URL') {
-					actualValue = context.executeFunctions.getNodeParameter('customFieldTextValue', context.itemIndex, '') as string;
-				} else if (fieldType === 'NUMBER') {
-					const numValue = context.executeFunctions.getNodeParameter('customFieldNumberValue', context.itemIndex, 0) as number;
-					actualValue = numValue !== 0 ? numValue.toString() : '';
-				} else if (fieldType === 'PERCENT') {
-					const percentValue = context.executeFunctions.getNodeParameter('customFieldPercentValue', context.itemIndex, 0) as number;
-					actualValue = percentValue !== 0 ? percentValue.toString() : '';
-				} else if (fieldType === 'STAR_RATING') {
-					const ratingValue = context.executeFunctions.getNodeParameter('customFieldRatingValue', context.itemIndex, 0) as number;
-					actualValue = ratingValue !== 0 ? ratingValue.toString() : '';
-				} else if (fieldType === 'CURRENCY') {
-					actualValue = context.executeFunctions.getNodeParameter('customFieldCurrencyValue', context.itemIndex, '') as string;
-				} else if (fieldType === 'COUNTRY') {
-					actualValue = context.executeFunctions.getNodeParameter('customFieldCountryValue', context.itemIndex, '') as string;
-				} else if (fieldType === 'DATE') {
-					// Try date picker first, then manual input
-					const dateValue = context.executeFunctions.getNodeParameter('customFieldDateValue', context.itemIndex, '') as string;
-					const manualDateValue = context.executeFunctions.getNodeParameter('customFieldDateManual', context.itemIndex, '') as string;
-					actualValue = dateValue || manualDateValue || '';
-				} else if (fieldType === 'LOCATION') {
-					const latitude = context.executeFunctions.getNodeParameter('customFieldLatitude', context.itemIndex, 0) as number;
-					const longitude = context.executeFunctions.getNodeParameter('customFieldLongitude', context.itemIndex, 0) as number;
-					if (latitude !== 0 || longitude !== 0) {
-						actualValue = `${latitude},${longitude}`;
-					}
-				} else if (fieldType === 'CHECKBOX') {
-					const checkboxValue = context.executeFunctions.getNodeParameter('customFieldCheckboxValue', context.itemIndex, false) as boolean;
-					actualValue = checkboxValue ? 'true' : 'false';
-				} else if (fieldType === 'SELECT_SINGLE') {
-					actualValue = context.executeFunctions.getNodeParameter('customFieldSelectValue', context.itemIndex, '') as string;
-				} else if (fieldType === 'SELECT_MULTI') {
-					const multiValues = context.executeFunctions.getNodeParameter('customFieldMultiSelectValue', context.itemIndex, []) as string[];
-					actualValue = Array.isArray(multiValues) ? multiValues.join(',') : '';
-				}
+				// Get the universal custom field value
+				actualValue = context.executeFunctions.getNodeParameter('customFieldValue', context.itemIndex, '') as string;
 				
 				// Only proceed if we have a value
 				if (actualValue && actualValue.toString().trim() !== '') {
@@ -299,7 +265,35 @@ export class UpdateRecordOperation extends BaseBlueOperation {
 				break;
 				
 			case 'CURRENCY':
-				inputs.push(`text: "${this.escapeGraphQLString(value)}"`);
+				// Parse currency value from formats like "100 USD", "USD 100", "100", or "USD100"
+				const currencyMatch = value.match(/^(\$?[A-Z]{3})?\s*(\d+(?:\.\d+)?)\s*([A-Z]{3})?$/i) || 
+								     value.match(/^(\d+(?:\.\d+)?)\s*([A-Z]{3})$/i);
+				
+				if (currencyMatch) {
+					let amount: number;
+					let currency: string;
+					
+					// Handle different formats
+					if (currencyMatch[2] && currencyMatch[3]) {
+						// Format: "100 USD" or "USD 100"
+						amount = parseFloat(currencyMatch[2]);
+						currency = currencyMatch[3] || currencyMatch[1]?.replace('$', '') || 'USD';
+					} else if (currencyMatch[1] && currencyMatch[2]) {
+						// Format: "USD100" or "$100"
+						amount = parseFloat(currencyMatch[2]);
+						currency = currencyMatch[1].replace('$', '');
+					} else {
+						// Just a number, default to USD
+						amount = parseFloat(value);
+						currency = 'USD';
+					}
+					
+					inputs.push(`number: ${amount}`);
+					inputs.push(`currency: "${currency.toUpperCase()}"`);
+				} else {
+					// Fallback to text if parsing fails
+					inputs.push(`text: "${this.escapeGraphQLString(value)}"`);
+				}
 				break;
 				
 			case 'COUNTRY':
