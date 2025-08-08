@@ -248,17 +248,48 @@ export class UpdateRecordOperation extends BaseBlueOperation {
 				break;
 				
 			case 'DATE':
-				// Ensure date is in proper ISO format
-				let formattedDate = value;
-				try {
-					const date = new Date(value);
-					if (!isNaN(date.getTime())) {
-						formattedDate = date.toISOString();
+				// Parse date range format "startDate,endDate" or single date "date,date"
+				const dateParts = value.split(',').map(d => d.trim());
+				
+				if (dateParts.length === 2) {
+					// Format start date
+					let formattedStartDate = dateParts[0];
+					try {
+						const startDate = new Date(dateParts[0]);
+						if (!isNaN(startDate.getTime())) {
+							formattedStartDate = startDate.toISOString();
+						}
+					} catch (e) {
+						// Use original value if parsing fails
 					}
-				} catch (e) {
-					// Use original value if parsing fails
+					
+					// Format end date  
+					let formattedEndDate = dateParts[1];
+					try {
+						const endDate = new Date(dateParts[1]);
+						if (!isNaN(endDate.getTime())) {
+							formattedEndDate = endDate.toISOString();
+						}
+					} catch (e) {
+						// Use original value if parsing fails
+					}
+					
+					inputs.push(`startDate: "${formattedStartDate}"`);
+					inputs.push(`endDate: "${formattedEndDate}"`);
+				} else {
+					// Fallback: treat as single date, use same for start and end
+					let formattedDate = value;
+					try {
+						const date = new Date(value);
+						if (!isNaN(date.getTime())) {
+							formattedDate = date.toISOString();
+						}
+					} catch (e) {
+						// Use original value if parsing fails
+					}
+					inputs.push(`startDate: "${formattedDate}"`);
+					inputs.push(`endDate: "${formattedDate}"`);
 				}
-				inputs.push(`text: "${formattedDate}"`);
 				break;
 				
 			case 'LOCATION':
