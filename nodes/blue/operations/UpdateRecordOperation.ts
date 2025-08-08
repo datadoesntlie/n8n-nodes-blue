@@ -42,14 +42,9 @@ export class UpdateRecordOperation extends BaseBlueOperation {
 			const position = context.executeFunctions.getNodeParameter('position', context.itemIndex, '') as string;
 			const color = context.executeFunctions.getNodeParameter('color', context.itemIndex, '') as string;
 			
-			// Custom field - now individual field instead of collection (resourceLocator format)
-			const customFieldIdParam = context.executeFunctions.getNodeParameter('customFieldId', context.itemIndex, '') as any;
-			let customFieldId = '';
-			if (typeof customFieldIdParam === 'object' && customFieldIdParam.value) {
-				customFieldId = customFieldIdParam.value;
-			} else if (typeof customFieldIdParam === 'string') {
-				customFieldId = customFieldIdParam;
-			}
+			// Custom fields collection (fixedCollection format)
+			const customFieldsData = context.executeFunctions.getNodeParameter('customFields', context.itemIndex, {}) as any;
+			const customFields = customFieldsData.customField || [];
 
 			const results = [];
 
@@ -81,49 +76,57 @@ export class UpdateRecordOperation extends BaseBlueOperation {
 				results.push({ type: 'core_update', data: coreData });
 			}
 
-			// Step 2: Update custom field if provided (new single field structure)
-			if (customFieldId && customFieldId.trim() !== '') {
-				// Extract field ID and type from the combined value
-				let fieldId = customFieldId;
-				let fieldType = '';
-				
-				if (typeof customFieldId === 'string' && customFieldId.includes('|')) {
-					const parts = customFieldId.split('|');
-					fieldId = parts[0];
-					fieldType = parts[1];
-				}
-				
-				// Get the actual value based on field type and available parameters
-				let actualValue = '';
-				
-				// Get the universal custom field value
-				actualValue = context.executeFunctions.getNodeParameter('customFieldValue', context.itemIndex, '') as string;
-				
-				// Only proceed if we have a value
-				if (actualValue && actualValue.toString().trim() !== '') {
-					const customFieldMutation = this.buildDynamicCustomFieldMutation(recordId, fieldId, fieldType, actualValue);
+			// Step 2: Update custom fields if provided (collection structure)
+			if (customFields && Array.isArray(customFields) && customFields.length > 0) {
+				for (let i = 0; i < customFields.length; i++) {
+					const customField = customFields[i];
+					const customFieldIdParam = customField.customFieldId;
+					const customFieldValue = customField.customFieldValue;
 					
-					// Debug logging for star rating - add to error message if it fails
-					if (fieldType === 'STAR_RATING') {
-						// We'll include debug info in the error if mutation fails
+					// Extract custom field ID from resourceLocator format
+					let customFieldId = '';
+					if (typeof customFieldIdParam === 'object' && customFieldIdParam.value) {
+						customFieldId = customFieldIdParam.value;
+					} else if (typeof customFieldIdParam === 'string') {
+						customFieldId = customFieldIdParam;
 					}
 					
-					try {
-						const customFieldResponse = await this.makeGraphQLRequest(context, customFieldMutation, {}, companyId, projectId);
-						const customFieldData = this.handleGraphQLResponse(
-							customFieldResponse,
-							context.additionalOptions.fullResponse as boolean,
-						);
-						results.push({ 
-							type: 'custom_field_update', 
-							fieldId: fieldId, 
-							fieldType: fieldType,
-							value: actualValue,
-							data: customFieldData 
-						});
-					} catch (customFieldError) {
-						// If custom field fails, throw error with mutation details for debugging
-						throw new Error(`Custom field mutation failed for field ${fieldId} (${fieldType}) with value "${actualValue}". Mutation: ${customFieldMutation}. CompanyId: ${companyId}. ProjectId: ${projectId}. Error: ${customFieldError instanceof Error ? customFieldError.message : 'Unknown error'}`);
+					if (customFieldId && customFieldId.trim() !== '') {
+						// Extract field ID and type from the combined value
+						let fieldId = customFieldId;
+						let fieldType = '';
+						
+						if (typeof customFieldId === 'string' && customFieldId.includes('|')) {
+							const parts = customFieldId.split('|');
+							fieldId = parts[0];
+							fieldType = parts[1];
+						}
+						
+						// Get the actual value
+						const actualValue = customFieldValue || '';
+						
+						// Only proceed if we have a value
+						if (actualValue && actualValue.toString().trim() !== '') {
+							const customFieldMutation = this.buildDynamicCustomFieldMutation(recordId, fieldId, fieldType, actualValue);
+							
+							try {
+								const customFieldResponse = await this.makeGraphQLRequest(context, customFieldMutation, {}, companyId, projectId);
+								const customFieldData = this.handleGraphQLResponse(
+									customFieldResponse,
+									context.additionalOptions.fullResponse as boolean,
+								);
+								results.push({ 
+									type: 'custom_field_update', 
+									fieldId: fieldId, 
+									fieldType: fieldType,
+									value: actualValue,
+									data: customFieldData 
+								});
+							} catch (customFieldError) {
+								// If custom field fails, throw error with mutation details for debugging
+								throw new Error(`Custom field mutation failed for field ${fieldId} (${fieldType}) with value "${actualValue}". Mutation: ${customFieldMutation}. CompanyId: ${companyId}. ProjectId: ${projectId}. Error: ${customFieldError instanceof Error ? customFieldError.message : 'Unknown error'}`);
+							}
+						}
 					}
 				}
 			}

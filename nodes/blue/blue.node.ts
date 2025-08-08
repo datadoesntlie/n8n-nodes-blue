@@ -542,7 +542,7 @@ export class blue implements INodeType {
 				description: 'Color code for the record (optional)',
 				placeholder: 'e.g., #FF5733',
 			},
-			// Custom Field Selection
+			// Custom Field Selection (HIDDEN - using collection approach)
 			{
 				displayName: 'Custom Field',
 				name: 'customFieldId',
@@ -550,7 +550,7 @@ export class blue implements INodeType {
 				default: { mode: 'list', value: '' },
 				displayOptions: {
 					show: {
-						operation: ['updateRecord'],
+						operation: ['NEVER_SHOW'],
 					},
 				},
 				description: 'Custom field to update',
@@ -582,19 +582,71 @@ export class blue implements INodeType {
 					},
 				],
 			},
-			// Universal Custom Field Value
+			// Custom Fields to Update Collection
 			{
-				displayName: 'Custom Field Value',
-				name: 'customFieldValue',
-				type: 'string',
+				displayName: 'Add Custom Field to Update',
+				name: 'customFields',
+				type: 'fixedCollection',
 				displayOptions: {
 					show: {
 						operation: ['updateRecord'],
 					},
 				},
-				default: '',
-				description: 'Format examples:<br/>• Currency: "100 USD"<br/>• Date: "startDate,endDate" (ISO 8601: 2025-01-15T14:30:00Z)<br/>• Location: "latitude,longitude"<br/>• Country: "AF,Afghanistan" (CountryCode,Country Name)<br/>• Number/Percent/Rating: Enter number within range<br/>• Text/Email/URL: Enter directly<br/>• Phone: +50767890432<br/>• Checkbox: True/False',
-				placeholder: 'Enter field value...',
+				typeOptions: {
+					multipleValues: true,
+				},
+				default: {},
+				description: 'Click to add custom fields to update',
+				placeholder: 'Add Custom Field to Update',
+				options: [
+					{
+						displayName: 'Custom Field Update',
+						name: 'customField',
+						values: [
+							{
+								displayName: 'Custom Field',
+								name: 'customFieldId',
+								type: 'resourceLocator',
+								default: { mode: 'list', value: '' },
+								modes: [
+									{
+										displayName: 'From List',
+										name: 'list',
+										type: 'list',
+										placeholder: 'Select a custom field...',
+										typeOptions: {
+											searchListMethod: 'searchCustomFields',
+											searchable: true,
+										},
+									},
+									{
+										displayName: 'By ID',
+										name: 'id',
+										type: 'string',
+										placeholder: 'e.g., field-123|TEXT_SINGLE',
+										validation: [
+											{
+												type: 'regex',
+												properties: {
+													regex: '^[a-zA-Z0-9]+\\|[A-Z_]+$',
+													errorMessage: 'Custom field ID must be in format: fieldId|fieldType',
+												},
+											},
+										],
+									},
+								],
+							},
+							{
+								displayName: 'Custom Field Value',
+								name: 'customFieldValue',
+								type: 'string',
+								default: '',
+								description: 'Format examples:<br/>• Currency: "100 USD"<br/>• Date: "startDate,endDate" (ISO 8601: 2025-01-15T14:30:00Z)<br/>• Location: "latitude,longitude"<br/>• Country: "AF,Afghanistan" (CountryCode,Country Name)<br/>• Number/Percent/Rating: Enter number within range<br/>• Text/Email/URL: Enter directly<br/>• Phone: +50767890432<br/>• Checkbox: True/False<br/>• Select_Single: OptionID124<br/>• Select_Multi: OptionID123,OptionID124',
+								placeholder: 'Enter field value...',
+							},
+						],
+					},
+				],
 			},
 			// Country Code - For COUNTRY fields (HIDDEN - using universal field)
 			{
