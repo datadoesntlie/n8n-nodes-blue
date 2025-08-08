@@ -302,7 +302,34 @@ export class UpdateRecordOperation extends BaseBlueOperation {
 				break;
 				
 			case 'COUNTRY':
-				inputs.push(`text: "${this.escapeGraphQLString(value)}"`);
+				// Parse country value from formats like "AF,Afghanistan" or "Afghanistan,AF"
+				const countryParts = value.split(',').map(part => part.trim());
+				
+				if (countryParts.length === 2) {
+					let countryCode = '';
+					let countryName = '';
+					
+					// Check if first part is a 2-letter country code
+					if (countryParts[0].length === 2 && /^[A-Z]{2}$/i.test(countryParts[0])) {
+						// Format: "AF,Afghanistan"
+						countryCode = countryParts[0].toUpperCase();
+						countryName = countryParts[1];
+					} else if (countryParts[1].length === 2 && /^[A-Z]{2}$/i.test(countryParts[1])) {
+						// Format: "Afghanistan,AF"
+						countryName = countryParts[0];
+						countryCode = countryParts[1].toUpperCase();
+					} else {
+						// Can't determine format, fallback to text only
+						inputs.push(`text: "${this.escapeGraphQLString(value)}"`);
+						break;
+					}
+					
+					inputs.push(`countryCodes: ["${countryCode}"]`);
+					inputs.push(`text: "${this.escapeGraphQLString(countryName)}"`);
+				} else {
+					// Single value, assume it's country name only
+					inputs.push(`text: "${this.escapeGraphQLString(value)}"`);
+				}
 				break;
 				
 			default:
