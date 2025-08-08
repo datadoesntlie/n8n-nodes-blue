@@ -986,6 +986,7 @@ export class blue implements INodeType {
 				description: 'Users to assign to this record. Choose from the list, or specify IDs using an <a href="https://docs.n8n.io/code/expressions/">expression</a>.',
 				typeOptions: {
 					loadOptionsMethod: 'getProjectUsers',
+					loadOptionsDependsOn: ['companyId', 'projectId'],
 				},
 			},
 			{
@@ -1001,50 +1002,74 @@ export class blue implements INodeType {
 				description: 'Tags to add to this record. Choose from the list, or specify IDs using an <a href="https://docs.n8n.io/code/expressions/">expression</a>.',
 				typeOptions: {
 					loadOptionsMethod: 'getProjectTags',
+					loadOptionsDependsOn: ['companyId', 'projectId'],
 				},
 			},
+			// Custom Fields to Set Collection
 			{
-				displayName: 'Custom Fields',
+				displayName: 'Add Custom Field to Set',
 				name: 'customFields',
 				type: 'fixedCollection',
-				placeholder: 'Add Custom Field',
 				displayOptions: {
 					show: {
 						operation: ['createRecord'],
 					},
 				},
-				default: {},
 				typeOptions: {
 					multipleValues: true,
 				},
+				default: {},
+				description: 'Click to add custom fields to set during record creation',
+				placeholder: 'Add Custom Field to Set',
 				options: [
 					{
+						displayName: 'Custom Field to Set',
 						name: 'customField',
-						displayName: 'Custom Field',
 						values: [
 							{
-								displayName: 'Custom Field Name or ID',
+								displayName: 'Custom Field',
 								name: 'customFieldId',
-								type: 'options',
-								default: '',
-								required: true,
-								description: 'Select the custom field to set. Choose from the list, or specify an ID using an <a href="https://docs.n8n.io/code/expressions/">expression</a>.',
-								typeOptions: {
-									loadOptionsMethod: 'getCustomFields',
-								},
+								type: 'resourceLocator',
+								default: { mode: 'list', value: '' },
+								modes: [
+									{
+										displayName: 'From List',
+										name: 'list',
+										type: 'list',
+										placeholder: 'Select a custom field...',
+										typeOptions: {
+											searchListMethod: 'searchCustomFields',
+											searchable: true,
+										},
+									},
+									{
+										displayName: 'By ID',
+										name: 'id',
+										type: 'string',
+										placeholder: 'e.g., field-123|TEXT_SINGLE',
+										validation: [
+											{
+												type: 'regex',
+												properties: {
+													regex: '^[a-zA-Z0-9]+\\|[A-Z_]+$',
+													errorMessage: 'Custom field ID must be in format: fieldId|fieldType',
+												},
+											},
+										],
+									},
+								],
 							},
 							{
-								displayName: 'Value',
-								name: 'value',
+								displayName: 'Custom Field Value',
+								name: 'customFieldValue',
 								type: 'string',
 								default: '',
-								required: true,
-								description: 'Value for the custom field',
+								description: 'Format examples:<br/>• Currency: "100 USD"<br/>• Date: "startDate,endDate" (ISO 8601: 2025-01-15T14:30:00Z)<br/>• Location: "latitude,longitude"<br/>• Country: "AF,Afghanistan" (CountryCode,Country Name)<br/>• Number/Percent/Rating: Enter number within range<br/>• Text/Email/URL: Enter directly<br/>• Phone: +50767890432<br/>• Checkbox: True/False<br/>• Select_Single: OptionID124<br/>• Select_Multi: OptionID123,OptionID124',
+								placeholder: 'Enter field value...',
 							},
 						],
 					},
 				],
-				description: 'Custom fields to set for this record',
 			},
 			{
 				displayName: 'Checklists',

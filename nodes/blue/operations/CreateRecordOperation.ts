@@ -145,12 +145,42 @@ export class CreateRecordOperation extends BaseBlueOperation {
 			inputs.push(`tags: [${tagsStr}]`);
 		}
 		
-		// Custom fields
+		// Custom fields (with universal field support like UpdateRecordOperation)
 		if (fields.customFields && fields.customFields.length > 0) {
 			const customFieldsStr = fields.customFields.map((field: any) => {
-				return `{ customFieldId: "${field.customFieldId}", value: "${this.escapeGraphQLString(field.value)}" }`;
-			}).join(', ');
-			inputs.push(`customFields: [${customFieldsStr}]`);
+				// Extract custom field ID from resourceLocator format
+				let customFieldId = '';
+				if (typeof field.customFieldId === 'object' && field.customFieldId.value) {
+					customFieldId = field.customFieldId.value;
+				} else if (typeof field.customFieldId === 'string') {
+					customFieldId = field.customFieldId;
+				}
+				
+				// Extract field ID and type from the combined value
+				let fieldId = customFieldId;
+				let fieldType = '';
+				
+				if (typeof customFieldId === 'string' && customFieldId.includes('|')) {
+					const parts = customFieldId.split('|');
+					fieldId = parts[0];
+					fieldType = parts[1];
+				}
+				
+				// Get the value (using customFieldValue for new format)
+				const fieldValue = field.customFieldValue || field.value || '';
+				
+				// Only include if we have both field ID and value
+				if (fieldId && fieldValue) {
+					// Use the same value processing as UpdateRecordOperation
+					const processedValue = this.processCustomFieldValue(fieldType, fieldValue);
+					return `{ customFieldId: "${fieldId}", value: "${this.escapeGraphQLString(processedValue)}" }`;
+				}
+				return null;
+			}).filter(Boolean).join(', ');
+			
+			if (customFieldsStr) {
+				inputs.push(`customFields: [${customFieldsStr}]`);
+			}
 		}
 		
 		// Checklists
@@ -192,5 +222,67 @@ export class CreateRecordOperation extends BaseBlueOperation {
 
 	private escapeGraphQLString(str: string): string {
 		return str.replace(/\"/g, '\\"').replace(/\n/g, '\\n').replace(/\r/g, '\\r');
+	}
+
+	private processCustomFieldValue(fieldType: string, value: string): string {
+		// Process different field types for create operations (simplified version)
+		switch (fieldType) {
+			case 'DATE':
+				// For create operations, handle single dates
+				try {
+					const date = new Date(value);
+					if (!isNaN(date.getTime())) {
+						return date.toISOString();
+					}
+				} catch (e) {
+					// Use original value if parsing fails
+				}
+				return value;
+				
+			case 'LOCATION':
+				// Expect "latitude,longitude" format
+				const parts = value.split(',').map(v => v.trim());
+				if (parts.length === 2 && !isNaN(Number(parts[0])) && !isNaN(Number(parts[1]))) {
+					return `${parts[0]},${parts[1]}`;
+				}
+				return value;
+				
+			case 'COUNTRY':
+				// Handle "CountryCode,CountryName" format - for create we just use the name
+				const countryParts = value.split(',').map(part => part.trim());
+				if (countryParts.length === 2) {
+					// Return country name part
+					return countryParts[1] || countryParts[0];
+				}
+				return value;
+				
+			case 'CURRENCY':
+				// Parse currency format for create operations
+				const currencyMatch = value.match(/^(\$?[A-Z]{3})?\s*(\d+(?:\.\d+)?)\s*([A-Z]{3})?$/i) || 
+								     value.match(/^(\d+(?:\.\d+)?)\s*([A-Z]{3})$/i);
+				
+				if (currencyMatch) {
+					let amount: number;
+					let currency: string;
+					
+					if (currencyMatch[2] && currencyMatch[3]) {
+						amount = parseFloat(currencyMatch[2]);
+						currency = currencyMatch[3] || currencyMatch[1]?.replace('$', '') || 'USD';
+					} else if (currencyMatch[1] && currencyMatch[2]) {
+						amount = parseFloat(currencyMatch[2]);
+						currency = currencyMatch[1].replace('$', '');
+					} else {
+						amount = parseFloat(value);
+						currency = 'USD';
+					}
+					
+					return `${amount} ${currency.toUpperCase()}`;
+				}
+				return value;
+				
+			default:
+				// For all other types (TEXT, NUMBER, etc.), use value as-is
+				return value;
+		}
 	}
 }
