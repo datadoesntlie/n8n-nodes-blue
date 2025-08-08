@@ -147,22 +147,7 @@ export class blue implements INodeType {
 				description: 'Company ID or slug to work with',
 				placeholder: 'e.g., your-company-slug',
 			},
-			{
-				displayName: 'Tag Names or IDs',
-				name: 'tagIds',
-				type: 'multiOptions',
-				displayOptions: {
-					show: {
-						operation: ['tagRecord'],
-					},
-				},
-				required: true,
-				description: 'Choose from the list, or specify IDs using an <a href="https://docs.n8n.io/code/expressions/">expression</a>',
-				default: [],
-				typeOptions: {
-					loadOptionsMethod: 'getProjectTags',
-				},
-			},
+			// Tag field moved to correct position later
 			// Custom Query Section
 			{
 				displayName: 'GraphQL Query',
@@ -451,6 +436,23 @@ export class blue implements INodeType {
 						],
 					},
 				],
+			},
+			// Tag Selection for tagRecord operation
+			{
+				displayName: 'Tags',
+				name: 'tagIds',
+				type: 'multiOptions',
+				displayOptions: {
+					show: {
+						operation: ['tagRecord'],
+					},
+				},
+				required: true,
+				description: 'Select tags to add to the record. Choose from the list, or specify IDs using an <a href="https://docs.n8n.io/code/expressions/">expression</a>',
+				default: [],
+				typeOptions: {
+					loadOptionsMethod: 'getProjectTags',
+				},
 			},
 			{
 				displayName: 'Record ID',
@@ -1945,14 +1947,29 @@ export class blue implements INodeType {
 
 			const credentials = await this.getCredentials('blueApi') as BlueCredentials;
 			
-			const query = `query ListOfTagsWithinProjects {
-				tagList(filter: { projectIds: ["${actualProjectId}"], excludeArchivedProjects: false }) {
+			const query = `query ListTags {
+				tagList(
+					filter: { 
+						projectIds: ["${actualProjectId}"] 
+					}
+					first: 50
+					orderBy: title_ASC
+				) {
 					items {
 						id
 						uid
 						title
 						color
 					}
+					pageInfo {
+						totalPages
+						totalItems
+						page
+						perPage
+						hasNextPage
+						hasPreviousPage
+					}
+					totalCount
 				}
 			}`;
 

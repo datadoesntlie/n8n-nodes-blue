@@ -8,6 +8,7 @@ export class TagRecordOperation extends BaseBlueOperation {
 		try {
 			const recordId = context.executeFunctions.getNodeParameter('recordId', context.itemIndex) as string;
 			const companyIdParam = context.executeFunctions.getNodeParameter('companyId', context.itemIndex) as any;
+			const projectIdParam = context.executeFunctions.getNodeParameter('projectId', context.itemIndex) as any;
 			
 			// Extract company ID from resourceLocator format
 			let companyId = '';
@@ -17,11 +18,27 @@ export class TagRecordOperation extends BaseBlueOperation {
 				companyId = companyIdParam;
 			}
 			
+			// Extract project ID from resourceLocator format  
+			let projectId = '';
+			if (typeof projectIdParam === 'object' && projectIdParam.value) {
+				projectId = projectIdParam.value;
+			} else if (typeof projectIdParam === 'string') {
+				projectId = projectIdParam;
+			}
+			
 			// Get selected tags
 			const tagIds = context.executeFunctions.getNodeParameter('tagIds', context.itemIndex) as string[];
 			
 			if (!recordId || !recordId.trim()) {
 				throw new Error('Record ID is required');
+			}
+			
+			if (!companyId || !companyId.trim()) {
+				throw new Error('Company ID is required');
+			}
+			
+			if (!projectId || !projectId.trim()) {
+				throw new Error('Project ID is required');
 			}
 			
 			if (!tagIds || !Array.isArray(tagIds) || tagIds.length === 0) {
@@ -30,7 +47,7 @@ export class TagRecordOperation extends BaseBlueOperation {
 
 			const mutation = this.buildTagRecordMutation(recordId, tagIds);
 			
-			const response = await this.makeGraphQLRequest(context, mutation, {}, companyId);
+			const response = await this.makeGraphQLRequest(context, mutation, {}, companyId, projectId);
 			const data = this.handleGraphQLResponse(
 				response,
 				context.additionalOptions.fullResponse as boolean,
