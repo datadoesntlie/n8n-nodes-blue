@@ -591,52 +591,46 @@ export class blue implements INodeType {
 					show: {
 						operation: ['updateRecord'],
 					},
-					hide: {
-						customFieldId: [''],
-					},
 				},
 				default: '',
-				description: 'Enter the value for the custom field (text, number, currency, etc.)',
-				placeholder: 'e.g., "Sample Text", "100", "100 USD", "USD 100", "5" for rating',
+				description: 'Format examples:<br/>• Currency: "100 USD"<br/>• Date: "startDate,endDate" (ISO 8601: 2025-01-15T14:30:00Z)<br/>• Location: "latitude,longitude"<br/>• Country: "AF,Afghanistan" (CountryCode,Country Name)<br/>• Number/Percent/Rating: Enter number within range<br/>• Text/Email/URL: Enter directly<br/>• Phone: +50767890432<br/>• Checkbox: True/False',
+				placeholder: 'Enter field value...',
 			},
-			// Country Code - For COUNTRY fields
+			// Country Code - For COUNTRY fields (HIDDEN - using universal field)
 			{
 				displayName: 'Country Code',
 				name: 'customFieldCountryValue',
 				type: 'string',
 				displayOptions: {
 					show: {
-						operation: ['updateRecord'],
-						customFieldId: ['/.*\\|COUNTRY.*/'],
+						operation: ['NEVER_SHOW'],
 					},
 				},
 				default: '',
 				description: 'Enter the ISO 3166 country code',
 				placeholder: 'e.g., US, GB, JP',
 			},
-			// Date Picker - For DATE fields
+			// Date Picker - For DATE fields (HIDDEN - using universal field)
 			{
 				displayName: 'Date Value',
 				name: 'customFieldDateValue',
 				type: 'dateTime',
 				displayOptions: {
 					show: {
-						operation: ['updateRecord'],
-						customFieldId: ['/.*\\|DATE.*/'],
+						operation: ['NEVER_SHOW'],
 					},
 				},
 				default: '',
 				description: 'Select a date for DATE fields',
 			},
-			// Manual Date Input - For DATE fields (ISO 8601)
+			// Manual Date Input - For DATE fields (ISO 8601) (HIDDEN - using universal field)
 			{
 				displayName: 'Manual Date Input (ISO 8601)',
 				name: 'customFieldDateManual',
 				type: 'string',
 				displayOptions: {
 					show: {
-						operation: ['updateRecord'],
-						customFieldId: ['/.*\\|DATE.*/'],
+						operation: ['NEVER_SHOW'],
 					},
 				},
 				default: '',
@@ -653,8 +647,7 @@ export class blue implements INodeType {
 				},
 				displayOptions: {
 					show: {
-						operation: ['updateRecord'],
-						customFieldId: ['={{$parameter["customFieldId"] && $parameter["customFieldId"].value && $parameter["customFieldId"].value.includes("|LOCATION") ? $parameter["customFieldId"].value : ""}}'],
+						operation: ['NEVER_SHOW'],
 					},
 				},
 				default: 0,
@@ -671,36 +664,35 @@ export class blue implements INodeType {
 				},
 				displayOptions: {
 					show: {
-						operation: ['updateRecord'],
-						customFieldId: ['={{$parameter["customFieldId"] && $parameter["customFieldId"].value && $parameter["customFieldId"].value.includes("|LOCATION") ? $parameter["customFieldId"].value : ""}}'],
+						operation: ['NEVER_SHOW'],
 					},
 				},
 				default: 0,
 				description: 'Enter the longitude coordinate for LOCATION fields',
 				placeholder: 'e.g., -122.4194',
 			},
-			// Checkbox - For CHECKBOX fields
+			// Checkbox - For CHECKBOX fields (HIDDEN - using universal field)
 			{
 				displayName: 'Checked',
 				name: 'customFieldCheckboxValue',
 				type: 'boolean',
 				displayOptions: {
 					show: {
-						operation: ['updateRecord'],
+						operation: ['NEVER_SHOW'],
 						customFieldId: ['/.*\\|CHECKBOX.*/'],
 					},
 				},
 				default: false,
 				description: 'Whether to check this checkbox for CHECKBOX fields',
 			},
-			// Single Select - For SELECT_SINGLE fields
+			// Single Select - For SELECT_SINGLE fields (HIDDEN - using universal field)
 			{
 				displayName: 'Select Option Name or ID',
 				name: 'customFieldSelectValue',
 				type: 'options',
 				displayOptions: {
 					show: {
-						operation: ['updateRecord'],
+						operation: ['NEVER_SHOW'],
 						customFieldId: ['/.*\\|SELECT_SINGLE.*/'],
 					},
 				},
@@ -711,14 +703,14 @@ export class blue implements INodeType {
 				},
 				description: 'Select an option for SELECT_SINGLE fields. Choose from the list, or specify an ID using an <a href="https://docs.n8n.io/code/expressions/">expression</a>.',
 			},
-			// Multi Select - For SELECT_MULTI fields
+			// Multi Select - For SELECT_MULTI fields (HIDDEN - using universal field)
 			{
 				displayName: 'Select Option Names or IDs',
 				name: 'customFieldMultiSelectValue',
 				type: 'multiOptions',
 				displayOptions: {
 					show: {
-						operation: ['updateRecord'],
+						operation: ['NEVER_SHOW'],
 						customFieldId: ['/.*\\|SELECT_MULTI.*/'],
 					},
 				},
@@ -1765,10 +1757,16 @@ export class blue implements INodeType {
 
 			const customFields = response.data?.customFields?.items || [];
 			const results: INodeListSearchItems[] = customFields
-				.filter((field: any) => 
-					!filter || 
-					field.name.toLowerCase().includes(filter.toLowerCase())
-				)
+				.filter((field: any) => {
+					// Exclude read-only field types that cannot be updated via API
+					const excludedTypes = ['UNIQUE_ID', 'REFERENCE'];
+					if (excludedTypes.includes(field.type)) {
+						return false;
+					}
+					
+					// Apply search filter if provided
+					return !filter || field.name.toLowerCase().includes(filter.toLowerCase());
+				})
 				.map((field: any) => ({
 					name: `${field.name} (${field.type})`,
 					value: `${field.id}|${field.type}`,
