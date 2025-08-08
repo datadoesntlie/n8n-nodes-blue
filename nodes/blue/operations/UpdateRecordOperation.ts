@@ -103,6 +103,11 @@ export class UpdateRecordOperation extends BaseBlueOperation {
 				if (actualValue && actualValue.toString().trim() !== '') {
 					const customFieldMutation = this.buildDynamicCustomFieldMutation(recordId, fieldId, fieldType, actualValue);
 					
+					// Debug logging for star rating - add to error message if it fails
+					if (fieldType === 'STAR_RATING') {
+						// We'll include debug info in the error if mutation fails
+					}
+					
 					try {
 						const customFieldResponse = await this.makeGraphQLRequest(context, customFieldMutation, {}, companyId, projectId);
 						const customFieldData = this.handleGraphQLResponse(
@@ -224,7 +229,7 @@ export class UpdateRecordOperation extends BaseBlueOperation {
 				
 			case 'NUMBER':
 			case 'PERCENT':
-			case 'STAR_RATING':
+			case 'RATING':
 				inputs.push(`number: ${Number(value)}`);
 				break;
 				
