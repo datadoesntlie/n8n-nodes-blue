@@ -1219,30 +1219,6 @@ export class blue implements INodeType {
 					loadOptionsDependsOn: ['companyId'],
 				},
 			},
-			// Common Options
-			{
-				displayName: 'Additional Options',
-				name: 'additionalOptions',
-				type: 'collection',
-				placeholder: 'Add Option',
-				default: {},
-				options: [
-					{
-						displayName: 'Timeout (Ms)',
-						name: 'timeout',
-						type: 'number',
-						default: 30000,
-						description: 'Request timeout in milliseconds',
-					},
-					{
-						displayName: 'Return Full Response',
-						name: 'fullResponse',
-						type: 'boolean',
-						default: false,
-						description: 'Whether to return the full GraphQL response including errors and extensions',
-					},
-				],
-			},
 			// Invite User Section
 			{
 				displayName: 'Company',
@@ -1405,6 +1381,30 @@ export class blue implements INodeType {
 					loadOptionsDependsOn: ['companyId', 'projectId'],
 				},
 				default: '',
+			},
+			// Common Options
+			{
+				displayName: 'Additional Options',
+				name: 'additionalOptions',
+				type: 'collection',
+				placeholder: 'Add Option',
+				default: {},
+				options: [
+					{
+						displayName: 'Timeout (Ms)',
+						name: 'timeout',
+						type: 'number',
+						default: 30000,
+						description: 'Request timeout in milliseconds',
+					},
+					{
+						displayName: 'Return Full Response',
+						name: 'fullResponse',
+						type: 'boolean',
+						default: false,
+						description: 'Whether to return the full GraphQL response including errors and extensions',
+					},
+				],
 			},
 		],
 	};
