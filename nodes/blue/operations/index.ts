@@ -8,6 +8,7 @@ import { CreateProjectOperation } from './CreateProjectOperation';
 import { CustomQueryOperation } from './CustomQueryOperation';
 import { TagRecordOperation } from './TagRecordOperation';
 import { InviteUserOperation } from './InviteUserOperation';
+import { ListCustomFieldsOperation } from './ListCustomFieldsOperation';
 
 export const operations: Record<string, BaseBlueOperation> = {
 	getCompanies: new GetCompaniesOperation(),
@@ -19,6 +20,7 @@ export const operations: Record<string, BaseBlueOperation> = {
 	customQuery: new CustomQueryOperation(),
 	tagRecord: new TagRecordOperation(),
 	inviteUser: new InviteUserOperation(),
+	listCustomFields: new ListCustomFieldsOperation(),
 };
 
 export {
@@ -32,4 +34,5 @@ export {
 	CustomQueryOperation,
 	TagRecordOperation,
 	InviteUserOperation,
+	ListCustomFieldsOperation,
 };

@@ -96,6 +96,12 @@ export class blue implements INodeType {
 						description: 'Invite a user to a project with specified role',
 						action: 'Invite a user to a project with specified role',
 					},
+					{
+						name: 'List Custom Fields',
+						value: 'listCustomFields',
+						description: 'List custom fields in a project with detailed information',
+						action: 'List custom fields in a project with detailed information',
+					},
 				],
 				default: 'getCompanies',
 			},
@@ -145,7 +151,7 @@ export class blue implements INodeType {
 				type: 'string',
 				displayOptions: {
 					hide: {
-						operation: ['getCompanies', 'updateRecord', 'createRecord', 'createProject', 'getProjects', 'getRecords', 'tagRecord', 'inviteUser'],
+						operation: ['getCompanies', 'updateRecord', 'createRecord', 'createProject', 'getProjects', 'getRecords', 'tagRecord', 'inviteUser', 'listCustomFields'],
 					},
 				},
 				default: '',
@@ -1205,19 +1211,42 @@ export class blue implements INodeType {
 			{
 				displayName: 'Template Name or ID',
 				name: 'templateId',
-				type: 'options',
+				type: 'resourceLocator',
+				default: { mode: 'list', value: '' },
 				displayOptions: {
 					show: {
 						operation: ['createProject'],
 					},
 				},
-				default: '',
 				required: true,
-				description: 'Template to use for creating the project. Choose from the list, or specify an ID using an <a href="https://docs.n8n.io/code/expressions/">expression</a>.',
-				typeOptions: {
-					loadOptionsMethod: 'getProjectTemplates',
-					loadOptionsDependsOn: ['companyId'],
-				},
+				description: 'Template to use for creating the project',
+				modes: [
+					{
+						displayName: 'From List',
+						name: 'list',
+						type: 'list',
+						placeholder: 'Select a template...',
+						typeOptions: {
+							searchListMethod: 'searchProjectTemplates',
+							searchable: true,
+						},
+					},
+					{
+						displayName: 'By ID',
+						name: 'id',
+						type: 'string',
+						placeholder: 'e.g., template-123',
+						validation: [
+							{
+								type: 'regex',
+								properties: {
+									regex: '.+',
+									errorMessage: 'Template ID cannot be empty',
+								},
+							},
+						],
+					},
+				],
 			},
 			// Invite User Section
 			{
@@ -1382,6 +1411,156 @@ export class blue implements INodeType {
 				},
 				default: '',
 			},
+			// List Custom Fields Section
+			{
+				displayName: 'Company',
+				name: 'companyId',
+				type: 'resourceLocator',
+				default: { mode: 'list', value: '' },
+				displayOptions: {
+					show: {
+						operation: ['listCustomFields'],
+					},
+				},
+				required: true,
+				description: 'Company where the project is located',
+				modes: [
+					{
+						displayName: 'From List',
+						name: 'list',
+						type: 'list',
+						placeholder: 'Select a company...',
+						typeOptions: {
+							searchListMethod: 'searchCompanies',
+							searchable: true,
+						},
+					},
+					{
+						displayName: 'By ID',
+						name: 'id',
+						type: 'string',
+						placeholder: 'e.g., ana',
+						validation: [
+							{
+								type: 'regex',
+								properties: {
+									regex: '.+',
+									errorMessage: 'Company ID cannot be empty',
+								},
+							},
+						],
+					},
+				],
+			},
+			{
+				displayName: 'Project',
+				name: 'projectId',
+				type: 'resourceLocator',
+				default: { mode: 'list', value: '' },
+				displayOptions: {
+					show: {
+						operation: ['listCustomFields'],
+					},
+				},
+				required: true,
+				description: 'Project to list custom fields from',
+				modes: [
+					{
+						displayName: 'From List',
+						name: 'list',
+						type: 'list',
+						placeholder: 'Select a project...',
+						typeOptions: {
+							searchListMethod: 'searchProjects',
+							searchable: true,
+						},
+					},
+					{
+						displayName: 'By ID',
+						name: 'id',
+						type: 'string',
+						placeholder: 'e.g., project-123',
+						validation: [
+							{
+								type: 'regex',
+								properties: {
+									regex: '.+',
+									errorMessage: 'Project ID cannot be empty',
+								},
+							},
+						],
+					},
+				],
+			},
+			{
+				displayName: 'Sort Order',
+				name: 'sortOrder',
+				type: 'options',
+				displayOptions: {
+					show: {
+						operation: ['listCustomFields'],
+					},
+				},
+				default: 'name_ASC',
+				description: 'How to sort the custom fields',
+				options: [
+					{
+						name: 'Name (A-Z)',
+						value: 'name_ASC',
+					},
+					{
+						name: 'Name (Z-A)',
+						value: 'name_DESC',
+					},
+					{
+						name: 'Position (Low to High)',
+						value: 'position_ASC',
+					},
+					{
+						name: 'Position (High to Low)',
+						value: 'position_DESC',
+					},
+					{
+						name: 'Created Date (Oldest First)',
+						value: 'createdAt_ASC',
+					},
+					{
+						name: 'Created Date (Newest First)',
+						value: 'createdAt_DESC',
+					},
+				],
+			},
+			{
+				displayName: 'Skip',
+				name: 'skip',
+				type: 'number',
+				displayOptions: {
+					show: {
+						operation: ['listCustomFields'],
+					},
+				},
+				default: 0,
+				description: 'Number of custom fields to skip (for pagination)',
+				typeOptions: {
+					minValue: 0,
+				},
+			},
+			{
+				displayName: 'Take',
+				name: 'take',
+				type: 'number',
+				displayOptions: {
+					show: {
+						operation: ['listCustomFields'],
+					},
+				},
+				default: 50,
+				description: 'Maximum number of custom fields to return (1-100)',
+				typeOptions: {
+					minValue: 1,
+					maxValue: 100,
+				},
+			},
 			// Common Options
 			{
 				displayName: 'Additional Options',
@@ -1413,6 +1592,7 @@ export class blue implements INodeType {
 		listSearch: {
 			searchCompanies: this.searchCompanies,
 			searchProjects: this.searchProjects,
+			searchProjectTemplates: this.searchProjectTemplates,
 			searchTodoLists: this.searchTodoLists,
 			searchProjectUsers: this.searchProjectUsers,
 			searchProjectTags: this.searchProjectTags,
@@ -1424,7 +1604,6 @@ export class blue implements INodeType {
 			getCustomFields: this.getCustomFields,
 			getCustomFieldsWithType: this.getCustomFieldsWithType,
 			getCustomFieldOptions: this.getCustomFieldOptions,
-			getProjectTemplates: this.getProjectTemplates,
 			getCustomRoles: this.getCustomRoles,
 		},
 	};
@@ -1647,6 +1826,98 @@ export class blue implements INodeType {
 			return { results };
 		} catch (error) {
 			return { 
+				results: [{
+					name: `Error: ${error instanceof Error ? error.message : 'Unknown error'}`,
+					value: '',
+				}]
+			};
+		}
+	}
+
+	async searchProjectTemplates(this: ILoadOptionsFunctions, filter?: string): Promise<INodeListSearchResult> {
+		try {
+			const companyId = this.getNodeParameter('companyId') as any;
+			// Extract company ID from resourceLocator
+			let actualCompanyId = '';
+			if (typeof companyId === 'object' && companyId.value) {
+				actualCompanyId = companyId.value;
+			} else if (typeof companyId === 'string') {
+				actualCompanyId = companyId;
+			}
+
+			if (!actualCompanyId) {
+				return {
+					results: [{
+						name: 'Please select a company first',
+						value: '',
+					}]
+				};
+			}
+
+			const credentials = await this.getCredentials('blueApi') as BlueCredentials;
+
+			const query = `query SearchProjectTemplates {
+				projectList(
+					filter: {
+						companyIds: ["${actualCompanyId}"]
+						archived: false
+						isTemplate: true
+						inProject: true
+						folderId: null
+						${filter ? `name_contains: "${filter}"` : ''}
+					}
+					sort: [position_ASC, name_ASC]
+					skip: 0
+					take: 50
+				) {
+					items {
+						id
+						name
+						slug
+						position
+					}
+					totalCount
+					pageInfo {
+						totalItems
+						hasNextPage
+					}
+				}
+			}`;
+
+			const requestOptions = {
+				method: 'POST' as const,
+				url: 'https://api.blue.cc/graphql',
+				headers: {
+					'X-Bloo-Token-ID': credentials.tokenId,
+					'X-Bloo-Token-Secret': credentials.tokenSecret,
+					'X-Bloo-Company-ID': actualCompanyId,
+					'Content-Type': 'application/json',
+					'User-Agent': 'n8n-blue-node/1.0',
+				},
+				body: {
+					query,
+					variables: {},
+				},
+				json: true,
+			};
+
+			const response = await this.helpers.request(requestOptions);
+
+			if (response.errors && response.errors.length > 0) {
+				const errorMessage = response.errors.map((err: any) => err.message).join(', ');
+				throw new Error(`GraphQL Error: ${errorMessage}`);
+			}
+
+			const templates = response.data?.projectList?.items || [];
+			return {
+				results: templates.map((template: any) => ({
+					name: template.name,
+					value: template.id,
+				}))
+			};
+
+		} catch (error) {
+			return {
 				results: [{
 					name: `Error: ${error instanceof Error ? error.message : 'Unknown error'}`,
 					value: '',
@@ -2673,9 +2944,10 @@ export class blue implements INodeType {
 
 	async getProjectTemplates(this: ILoadOptionsFunctions): Promise<INodePropertyOptions[]> {
 		try {
-			const companyIdParam = this.getNodeParameter('companyId') as any;
+			// Try to get the company ID using getCurrentNodeParameter like getCustomRoles does
+			const companyIdParam = this.getCurrentNodeParameter('companyId') as any;
 			
-			// Extract company ID from resourceLocator
+			// Extract company ID from resourceLocator format
 			let actualCompanyId = '';
 			if (typeof companyIdParam === 'object' && companyIdParam.value) {
 				actualCompanyId = companyIdParam.value;
@@ -2683,9 +2955,9 @@ export class blue implements INodeType {
 				actualCompanyId = companyIdParam;
 			}
 
-			if (!actualCompanyId) {
+			if (!actualCompanyId || actualCompanyId.trim() === '') {
 				return [{
-					name: 'Please Select a Company First',
+					name: 'Please select a company first',
 					value: '',
 				}];
 			}
@@ -2698,6 +2970,8 @@ export class blue implements INodeType {
 						companyIds: ["${actualCompanyId}"]
 						archived: false
 						isTemplate: true
+						inProject: true
+						folderId: null
 					}
 					sort: [position_ASC, name_ASC]
 					skip: 0
@@ -2708,7 +2982,11 @@ export class blue implements INodeType {
 						name
 						slug
 						position
-						archived
+					}
+					totalCount
+					pageInfo {
+						totalItems
+						hasNextPage
 					}
 				}
 			}`;
@@ -2719,6 +2997,7 @@ export class blue implements INodeType {
 				headers: {
 					'X-Bloo-Token-ID': credentials.tokenId,
 					'X-Bloo-Token-Secret': credentials.tokenSecret,
+					'X-Bloo-Company-ID': actualCompanyId,
 					'Content-Type': 'application/json',
 					'User-Agent': 'n8n-blue-node/1.0',
 				},

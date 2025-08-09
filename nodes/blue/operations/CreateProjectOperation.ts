@@ -18,7 +18,15 @@ export class CreateProjectOperation extends BaseBlueOperation {
 
 			// Required fields
 			const name = context.executeFunctions.getNodeParameter('name', context.itemIndex) as string;
-			const templateId = context.executeFunctions.getNodeParameter('templateId', context.itemIndex) as string;
+			const templateIdParam = context.executeFunctions.getNodeParameter('templateId', context.itemIndex) as any;
+			
+			// Extract template ID from resourceLocator format
+			let templateId = '';
+			if (typeof templateIdParam === 'object' && templateIdParam.value) {
+				templateId = templateIdParam.value;
+			} else if (typeof templateIdParam === 'string') {
+				templateId = templateIdParam;
+			}
 
 			const createMutation = this.buildCreateProjectMutation({
 				companyId,
