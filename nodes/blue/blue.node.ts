@@ -90,6 +90,12 @@ export class blue implements INodeType {
 						description: 'Update a record (todo/task) with custom fields',
 						action: 'Update a record todo task with custom fields',
 					},
+					{
+						name: 'Invite User',
+						value: 'inviteUser',
+						description: 'Invite a user to a project with specified role',
+						action: 'Invite a user to a project with specified role',
+					},
 				],
 				default: 'getCompanies',
 			},
@@ -139,7 +145,7 @@ export class blue implements INodeType {
 				type: 'string',
 				displayOptions: {
 					hide: {
-						operation: ['getCompanies', 'updateRecord', 'createRecord', 'createProject', 'getProjects', 'getRecords', 'tagRecord'],
+						operation: ['getCompanies', 'updateRecord', 'createRecord', 'createProject', 'getProjects', 'getRecords', 'tagRecord', 'inviteUser'],
 					},
 				},
 				default: '',
@@ -1237,6 +1243,169 @@ export class blue implements INodeType {
 					},
 				],
 			},
+			// Invite User Section
+			{
+				displayName: 'Company',
+				name: 'companyId',
+				type: 'resourceLocator',
+				default: { mode: 'list', value: '' },
+				displayOptions: {
+					show: {
+						operation: ['inviteUser'],
+					},
+				},
+				required: true,
+				description: 'Company where the project is located',
+				modes: [
+					{
+						displayName: 'From List',
+						name: 'list',
+						type: 'list',
+						placeholder: 'Select a company...',
+						typeOptions: {
+							searchListMethod: 'searchCompanies',
+							searchable: true,
+						},
+					},
+					{
+						displayName: 'By ID',
+						name: 'id',
+						type: 'string',
+						placeholder: 'e.g., ana',
+						validation: [
+							{
+								type: 'regex',
+								properties: {
+									regex: '.+',
+									errorMessage: 'Company ID cannot be empty',
+								},
+							},
+						],
+					},
+				],
+			},
+			{
+				displayName: 'Project',
+				name: 'projectId',
+				type: 'resourceLocator',
+				default: { mode: 'list', value: '' },
+				displayOptions: {
+					show: {
+						operation: ['inviteUser'],
+					},
+				},
+				required: true,
+				description: 'Project to invite the user to',
+				modes: [
+					{
+						displayName: 'From List',
+						name: 'list',
+						type: 'list',
+						placeholder: 'Select a project...',
+						typeOptions: {
+							searchListMethod: 'searchProjects',
+							searchable: true,
+						},
+					},
+					{
+						displayName: 'By ID',
+						name: 'id',
+						type: 'string',
+						placeholder: 'e.g., project-123',
+						validation: [
+							{
+								type: 'regex',
+								properties: {
+									regex: '.+',
+									errorMessage: 'Project ID cannot be empty',
+								},
+							},
+						],
+					},
+				],
+			},
+			{
+				displayName: 'Email',
+				name: 'email',
+				type: 'string',
+				displayOptions: {
+					show: {
+						operation: ['inviteUser'],
+					},
+				},
+				default: '',
+				required: true,
+				description: 'Email address of the user to invite',
+				placeholder: 'user@example.com',
+			},
+			{
+				displayName: 'Role',
+				name: 'role',
+				type: 'options',
+				displayOptions: {
+					show: {
+						operation: ['inviteUser'],
+					},
+				},
+				required: true,
+				description: 'Role to assign to the user',
+				options: [
+					{
+						name: 'Owner',
+						value: 'OWNER',
+						description: 'Full access to all project features',
+					},
+					{
+						name: 'Admin',
+						value: 'ADMIN',
+						description: 'Administrative access to the project',
+					},
+					{
+						name: 'Member',
+						value: 'MEMBER',
+						description: 'Standard member access',
+					},
+					{
+						name: 'Client',
+						value: 'CLIENT',
+						description: 'Client-level access',
+					},
+					{
+						name: 'Comment Only',
+						value: 'COMMENT_ONLY',
+						description: 'Can only add comments',
+					},
+					{
+						name: 'View Only',
+						value: 'VIEW_ONLY',
+						description: 'Read-only access',
+					},
+					{
+						name: 'Custom Role',
+						value: 'CUSTOM_ROLE',
+						description: 'Use a custom role defined in the project',
+					},
+				],
+				default: 'MEMBER',
+			},
+			{
+				displayName: 'Custom Role',
+				name: 'customRoleId',
+				type: 'options',
+				displayOptions: {
+					show: {
+						operation: ['inviteUser'],
+						role: ['CUSTOM_ROLE'],
+					},
+				},
+				required: true,
+				description: 'Custom role to assign to the user. Choose from the list, or specify an ID using an <a href="https://docs.n8n.io/code/expressions/">expression</a>.',
+				typeOptions: {
+					loadOptionsMethod: 'getCustomRoles',
+					loadOptionsDependsOn: ['companyId', 'projectId'],
+				},
+				default: '',
+			},
 		],
 	};
 
@@ -1256,6 +1425,7 @@ export class blue implements INodeType {
 			getCustomFieldsWithType: this.getCustomFieldsWithType,
 			getCustomFieldOptions: this.getCustomFieldOptions,
 			getProjectTemplates: this.getProjectTemplates,
+			getCustomRoles: this.getCustomRoles,
 		},
 	};
 
@@ -2577,6 +2747,86 @@ export class blue implements INodeType {
 		} catch (error) {
 			return [{
 				name: 'Error Loading Project Templates',
+				value: '',
+			}];
+		}
+	}
+
+	async getCustomRoles(this: ILoadOptionsFunctions): Promise<INodePropertyOptions[]> {
+		const credentials = await this.getCredentials('blueApi');
+		
+		// Get companyId and projectId from current parameters
+		const companyId = this.getCurrentNodeParameter('companyId') as any;
+		const projectId = this.getCurrentNodeParameter('projectId') as any;
+		
+		// Extract values from resourceLocator format
+		let companyValue = '';
+		let projectValue = '';
+		
+		if (typeof companyId === 'object' && companyId.value) {
+			companyValue = companyId.value;
+		} else if (typeof companyId === 'string') {
+			companyValue = companyId;
+		}
+		
+		if (typeof projectId === 'object' && projectId.value) {
+			projectValue = projectId.value;
+		} else if (typeof projectId === 'string') {
+			projectValue = projectId;
+		}
+
+		if (!companyValue || !projectValue) {
+			return [{
+				name: 'Please select Company and Project first',
+				value: '',
+			}];
+		}
+
+		try {
+			const query = `
+				query GetCustomRoles {
+					projectUserRoles(filter: { projectId: "${projectValue}" }) {
+						id
+						name
+					}
+				}
+			`;
+
+			const requestOptions = {
+				method: 'POST' as const,
+				url: 'https://api.blue.cc/graphql',
+				headers: {
+					'X-Bloo-Token-ID': credentials.tokenId,
+					'X-Bloo-Token-Secret': credentials.tokenSecret,
+					'X-Bloo-Company-ID': companyValue,
+					'Content-Type': 'application/json',
+					'User-Agent': 'n8n-blue-node/1.0',
+				},
+				body: {
+					query: query.trim(),
+					variables: {},
+				},
+				json: true,
+			};
+
+			const response = await this.helpers.request(requestOptions);
+
+			if (response.errors && response.errors.length > 0) {
+				return [{
+					name: 'Error Loading Custom Roles',
+					value: '',
+				}];
+			}
+
+			const customRoles = response.data?.projectUserRoles || [];
+			return customRoles.map((role: any) => ({
+				name: role.name,
+				value: role.id,
+			}));
+
+		} catch (error) {
+			return [{
+				name: 'Error Loading Custom Roles',
 				value: '',
 			}];
 		}
