@@ -276,7 +276,7 @@ export class CreateRecordOperation extends BaseBlueOperation {
 						currency = 'USD';
 					}
 					
-					return `${amount} ${currency.toUpperCase()}`;
+					return `${amount}${currency.toUpperCase()}`;
 				}
 				return value;
 				

@@ -42,6 +42,12 @@ export class UpdateRecordOperation extends BaseBlueOperation {
 			const position = context.executeFunctions.getNodeParameter('position', context.itemIndex, '') as string;
 			const color = context.executeFunctions.getNodeParameter('color', context.itemIndex, '') as string;
 			
+			// Assignee IDs (multiOptions array)
+			const assigneeIds = context.executeFunctions.getNodeParameter('assigneeIds', context.itemIndex, []) as string[];
+			
+			// Tag IDs (multiOptions array)  
+			const tagIds = context.executeFunctions.getNodeParameter('tagIds', context.itemIndex, []) as string[];
+
 			// Custom fields collection (fixedCollection format)
 			const customFieldsData = context.executeFunctions.getNodeParameter('customFields', context.itemIndex, {}) as any;
 			const customFields = customFieldsData.customField || [];
@@ -76,7 +82,47 @@ export class UpdateRecordOperation extends BaseBlueOperation {
 				results.push({ type: 'core_update', data: coreData });
 			}
 
-			// Step 2: Update custom fields if provided (collection structure)
+			// Step 2: Update assignees if provided
+			if (assigneeIds && Array.isArray(assigneeIds) && assigneeIds.length > 0) {
+				const assigneeMutation = this.buildAssigneeMutation(recordId, assigneeIds);
+				
+				try {
+					const assigneeResponse = await this.makeGraphQLRequest(context, assigneeMutation, {}, companyId, projectId);
+					const assigneeData = this.handleGraphQLResponse(
+						assigneeResponse,
+						context.additionalOptions.fullResponse as boolean,
+					);
+					results.push({ 
+						type: 'assignee_update', 
+						assigneeIds: assigneeIds,
+						data: assigneeData 
+					});
+				} catch (assigneeError) {
+					throw new Error(`Assignee update failed for record ${recordId}. Assignee IDs: ${assigneeIds.join(', ')}. Error: ${assigneeError instanceof Error ? assigneeError.message : 'Unknown error'}`);
+				}
+			}
+
+			// Step 3: Update tags if provided
+			if (tagIds && Array.isArray(tagIds) && tagIds.length > 0) {
+				const tagMutation = this.buildTagMutation(recordId, tagIds);
+				
+				try {
+					const tagResponse = await this.makeGraphQLRequest(context, tagMutation, {}, companyId, projectId);
+					const tagData = this.handleGraphQLResponse(
+						tagResponse,
+						context.additionalOptions.fullResponse as boolean,
+					);
+					results.push({ 
+						type: 'tag_update', 
+						tagIds: tagIds,
+						data: tagData 
+					});
+				} catch (tagError) {
+					throw new Error(`Tag update failed for record ${recordId}. Tag IDs: ${tagIds.join(', ')}. Error: ${tagError instanceof Error ? tagError.message : 'Unknown error'}`);
+				}
+			}
+
+			// Step 4: Update custom fields if provided (collection structure)
 			if (customFields && Array.isArray(customFields) && customFields.length > 0) {
 				for (let i = 0; i < customFields.length; i++) {
 					const customField = customFields[i];
@@ -380,6 +426,34 @@ export class UpdateRecordOperation extends BaseBlueOperation {
 			setTodoCustomField(
 				input: {
 					${inputs.join(',\n\t\t\t\t\t')}
+				}
+			)
+		}`;
+	}
+
+	private buildAssigneeMutation(recordId: string, assigneeIds: string[]): string {
+		const assigneeIdsStr = assigneeIds.map(id => `"${id}"`).join(', ');
+		
+		return `mutation SetRecordAssignees {
+			setTodoAssignees(
+				input: {
+					todoId: "${recordId}"
+					assigneeIds: [${assigneeIdsStr}]
+				}
+			) {
+				success
+			}
+		}`;
+	}
+
+	private buildTagMutation(recordId: string, tagIds: string[]): string {
+		const tagIdsStr = tagIds.map(id => `"${id}"`).join(', ');
+		
+		return `mutation UpdateRecordTags {
+			setTodoTags(
+				input: {
+					todoId: "${recordId}"
+					tagIds: [${tagIdsStr}]
 				}
 			)
 		}`;

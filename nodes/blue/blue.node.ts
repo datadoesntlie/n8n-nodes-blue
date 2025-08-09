@@ -584,6 +584,38 @@ export class blue implements INodeType {
 					},
 				],
 			},
+			{
+				displayName: 'Assignee Names or IDs',
+				name: 'assigneeIds',
+				type: 'multiOptions',
+				displayOptions: {
+					show: {
+						operation: ['updateRecord'],
+					},
+				},
+				default: [],
+				description: 'Users to assign to this record. Choose from the list, or specify IDs using an <a href="https://docs.n8n.io/code/expressions/">expression</a>.',
+				typeOptions: {
+					loadOptionsMethod: 'getProjectUsers',
+					loadOptionsDependsOn: ['companyId', 'projectId'],
+				},
+			},
+			{
+				displayName: 'Tag Names or IDs',
+				name: 'tagIds',
+				type: 'multiOptions',
+				displayOptions: {
+					show: {
+						operation: ['updateRecord'],
+					},
+				},
+				default: [],
+				description: 'Tags to add to this record. Choose from the list, or specify IDs using an <a href="https://docs.n8n.io/code/expressions/">expression</a>.',
+				typeOptions: {
+					loadOptionsMethod: 'getProjectTags',
+					loadOptionsDependsOn: ['companyId', 'projectId'],
+				},
+			},
 			// Custom Fields to Update Collection
 			{
 				displayName: 'Add Custom Field to Update',
