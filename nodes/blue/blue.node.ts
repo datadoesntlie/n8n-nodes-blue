@@ -61,22 +61,34 @@ export class blue implements INodeType {
 						action: 'Execute a custom graph ql query',
 					},
 					{
+						name: 'Get Records',
+						value: 'getRecords',
+						description: 'Retrieve records (todos/tasks) with advanced filtering',
+						action: 'Get records with advanced filtering',
+					},
+					{
+						name: 'Invite User',
+						value: 'inviteUser',
+						description: 'Invite User to a Project',
+						action: 'Invite a user to a project',
+					},
+					{
 						name: 'List Companies',
 						value: 'getCompanies',
 						description: 'List all companies you have access to',
 						action: 'List all companies you have access to',
 					},
 					{
+						name: 'List Custom Fields',
+						value: 'listCustomFields',
+						description: 'List custom fields in a project with detailed information',
+						action: 'List custom fields in a project with detailed information',
+					},
+					{
 						name: 'List Projects',
 						value: 'getProjects',
 						description: 'Retrieve projects from a company',
 						action: 'List projects from a company',
-					},
-					{
-						name: 'Get Records',
-						value: 'getRecords',
-						description: 'Retrieve records (todos/tasks) with advanced filtering',
-						action: 'Get records with advanced filtering',
 					},
 					{
 						name: 'Tag Record',
@@ -89,18 +101,6 @@ export class blue implements INodeType {
 						value: 'updateRecord',
 						description: 'Update a record (todo/task) with custom fields',
 						action: 'Update a record todo task with custom fields',
-					},
-					{
-						name: 'Invite User',
-						value: 'inviteUser',
-						description: 'Invite User to a Project',
-						action: 'Invite a user to a project',
-					},
-					{
-						name: 'List Custom Fields',
-						value: 'listCustomFields',
-						description: 'List custom fields in a project with detailed information',
-						action: 'List custom fields in a project with detailed information',
 					},
 				],
 				default: 'getCompanies',
@@ -1108,7 +1108,7 @@ export class blue implements INodeType {
 								name: 'customFieldValue',
 								type: 'string',
 								default: '',
-								description: 'Format examples:<br/>• Currency: "100 USD"<br/>• Date: "startDate,endDate" (ISO 8601: 2025-01-15T14:30:00Z)<br/>• Location: "latitude,longitude"<br/>• Country: "AF,Afghanistan" (CountryCode,Country Name)<br/>• Number/Percent/Rating: Enter number within range<br/>• Text/Email/URL: Enter directly<br/>• Phone: +50767890432<br/>• Checkbox: True/False<br/>• Select_Single: OptionID124<br/>• Select_Multi: OptionID123,OptionID124',
+								description: 'Format examples:• Currency: "100 USD"• Date: "startDate,endDate" (ISO 8601: 2025-01-15T14:30:00Z)• Location: "latitude,longitude"• Country: "AF,Afghanistan" (CountryCode,Country Name)• Number/Percent/Rating: Enter number within range• Text/Email/URL: Enter directly• Phone: +50767890432• Checkbox: True/False• Select_Single: OptionID124• Select_Multi: OptionID123,OptionID124',
 								placeholder: 'Enter field value...',
 							},
 						],
@@ -1356,19 +1356,9 @@ export class blue implements INodeType {
 				description: 'Role to assign to the user',
 				options: [
 					{
-						name: 'Owner',
-						value: 'OWNER',
-						description: 'Full access to all project features',
-					},
-					{
 						name: 'Admin',
 						value: 'ADMIN',
 						description: 'Administrative access to the project',
-					},
-					{
-						name: 'Member',
-						value: 'MEMBER',
-						description: 'Standard member access',
 					},
 					{
 						name: 'Client',
@@ -1381,14 +1371,24 @@ export class blue implements INodeType {
 						description: 'Can only add comments',
 					},
 					{
-						name: 'View Only',
-						value: 'VIEW_ONLY',
-						description: 'Read-only access',
-					},
-					{
 						name: 'Custom Role',
 						value: 'CUSTOM_ROLE',
 						description: 'Use a custom role defined in the project',
+					},
+					{
+						name: 'Member',
+						value: 'MEMBER',
+						description: 'Standard member access',
+					},
+					{
+						name: 'Owner',
+						value: 'OWNER',
+						description: 'Full access to all project features',
+					},
+					{
+						name: 'View Only',
+						value: 'VIEW_ONLY',
+						description: 'Read-only access',
 					},
 				],
 				default: 'MEMBER',
@@ -1505,6 +1505,14 @@ export class blue implements INodeType {
 				description: 'How to sort the custom fields',
 				options: [
 					{
+						name: 'Created Date (Newest First)',
+						value: 'createdAt_DESC',
+					},
+					{
+						name: 'Created Date (Oldest First)',
+						value: 'createdAt_ASC',
+					},
+					{
 						name: 'Name (A-Z)',
 						value: 'name_ASC',
 					},
@@ -1513,20 +1521,12 @@ export class blue implements INodeType {
 						value: 'name_DESC',
 					},
 					{
-						name: 'Position (Low to High)',
-						value: 'position_ASC',
-					},
-					{
 						name: 'Position (High to Low)',
 						value: 'position_DESC',
 					},
 					{
-						name: 'Created Date (Oldest First)',
-						value: 'createdAt_ASC',
-					},
-					{
-						name: 'Created Date (Newest First)',
-						value: 'createdAt_DESC',
+						name: 'Position (Low to High)',
+						value: 'position_ASC',
 					},
 				],
 			},
@@ -1713,7 +1713,7 @@ export class blue implements INodeType {
 
 			if (response.errors && response.errors.length > 0) {
 				const errorMessage = response.errors.map((err: any) => err.message).join(', ');
-				throw new Error(`GraphQL Error: ${errorMessage}`);
+				throw new NodeOperationError(this.getNode(), `GraphQL Error: ${errorMessage}`);
 			}
 
 			const companies = response.data?.companyList?.items || [];
@@ -1808,7 +1808,7 @@ export class blue implements INodeType {
 
 			if (response.errors && response.errors.length > 0) {
 				const errorMessage = response.errors.map((err: any) => err.message).join(', ');
-				throw new Error(`GraphQL Error: ${errorMessage}`);
+				throw new NodeOperationError(this.getNode(), `GraphQL Error: ${errorMessage}`);
 			}
 
 			const projects = response.data?.projectList?.items || [];
@@ -1905,7 +1905,7 @@ export class blue implements INodeType {
 
 			if (response.errors && response.errors.length > 0) {
 				const errorMessage = response.errors.map((err: any) => err.message).join(', ');
-				throw new Error(`GraphQL Error: ${errorMessage}`);
+				throw new NodeOperationError(this.getNode(), `GraphQL Error: ${errorMessage}`);
 			}
 
 			const templates = response.data?.projectList?.items || [];
@@ -2001,7 +2001,7 @@ export class blue implements INodeType {
 
 			if (response.errors && response.errors.length > 0) {
 				const errorMessage = response.errors.map((err: any) => err.message).join(', ');
-				throw new Error(`GraphQL Error: ${errorMessage}`);
+				throw new NodeOperationError(this.getNode(), `GraphQL Error: ${errorMessage}`);
 			}
 
 			const todoLists = response.data?.todoLists || [];
@@ -2102,7 +2102,7 @@ export class blue implements INodeType {
 
 			if (response.errors && response.errors.length > 0) {
 				const errorMessage = response.errors.map((err: any) => err.message).join(', ');
-				throw new Error(`GraphQL Error: ${errorMessage}`);
+				throw new NodeOperationError(this.getNode(), `GraphQL Error: ${errorMessage}`);
 			}
 
 			const users = response.data?.projectUserList?.users || [];
@@ -2201,7 +2201,7 @@ export class blue implements INodeType {
 
 			if (response.errors && response.errors.length > 0) {
 				const errorMessage = response.errors.map((err: any) => err.message).join(', ');
-				throw new Error(`GraphQL Error: ${errorMessage}`);
+				throw new NodeOperationError(this.getNode(), `GraphQL Error: ${errorMessage}`);
 			}
 
 			const tags = response.data?.tagList?.items || [];
@@ -2304,7 +2304,7 @@ export class blue implements INodeType {
 
 			if (response.errors && response.errors.length > 0) {
 				const errorMessage = response.errors.map((err: any) => err.message).join(', ');
-				throw new Error(`GraphQL Error: ${errorMessage}`);
+				throw new NodeOperationError(this.getNode(), `GraphQL Error: ${errorMessage}`);
 			}
 
 			const customFields = response.data?.customFields?.items || [];

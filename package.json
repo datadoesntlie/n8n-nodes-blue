@@ -51,10 +51,10 @@
   "n8n": {
     "n8nNodesApiVersion": 1,
     "credentials": [
-      "dist/credentials/blueapi.credentials.js"
+      "dist/credentials/BlueapiApi.credentials.js"
     ],
     "nodes": [
-      "dist/nodes/blue/blue.node.js"
+      "dist/nodes/blue/Blue.node.js"
     ]
   },
   "devDependencies": {
