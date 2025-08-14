@@ -4,7 +4,7 @@ import {
 	ICredentialTestRequest,
 } from 'n8n-workflow';
 
-export class blueapi implements ICredentialType {
+export class blueapiApi implements ICredentialType {
 	name = 'blueApi';
 	displayName = 'Blue API';
 	documentationUrl = 'https://api.blue.cc/graphql';

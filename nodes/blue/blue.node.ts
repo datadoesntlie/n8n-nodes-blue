@@ -58,7 +58,7 @@ export class blue implements INodeType {
 						name: 'Execute Custom GraphQL',
 						value: 'customQuery',
 						description: 'Execute a custom GraphQL query',
-						action: 'Execute a custom GraphQL query',
+						action: 'Execute a custom graph ql query',
 					},
 					{
 						name: 'List Companies',
@@ -451,7 +451,7 @@ export class blue implements INodeType {
 			},
 			// Tag Selection for tagRecord operation
 			{
-				displayName: 'Tags',
+				displayName: 'Tag Names or IDs',
 				name: 'tagIds',
 				type: 'multiOptions',
 				displayOptions: {
@@ -460,7 +460,7 @@ export class blue implements INodeType {
 					},
 				},
 				required: true,
-				description: 'Select tags to add to the record. Choose from the list, or specify IDs using an <a href="https://docs.n8n.io/code/expressions/">expression</a>',
+				description: 'Select tags to add to the record. Choose from the list, or specify IDs using an <a href="https://docs.n8n.io/code/expressions/">expression</a>.',
 				default: [],
 				typeOptions: {
 					loadOptionsMethod: 'getProjectTags',
@@ -687,7 +687,7 @@ export class blue implements INodeType {
 								name: 'customFieldValue',
 								type: 'string',
 								default: '',
-								description: 'Format examples:<br/>• Currency: "100 USD"<br/>• Date: "startDate,endDate" (ISO 8601: 2025-01-15T14:30:00Z)<br/>• Location: "latitude,longitude"<br/>• Country: "AF,Afghanistan" (CountryCode,Country Name)<br/>• Number/Percent/Rating: Enter number within range<br/>• Text/Email/URL: Enter directly<br/>• Phone: +50767890432<br/>• Checkbox: True/False<br/>• Select_Single: OptionID124<br/>• Select_Multi: OptionID123,OptionID124',
+								description: 'Format examples:• Currency: "100 USD"• Date: "startDate,endDate" (ISO 8601: 2025-01-15T14:30:00Z)• Location: "latitude,longitude"• Country: "AF,Afghanistan" (CountryCode,Country Name)• Number/Percent/Rating: Enter number within range• Text/Email/URL: Enter directly• Phone: +50767890432• Checkbox: True/False• Select_Single: OptionID124• Select_Multi: OptionID123,OptionID124',
 								placeholder: 'Enter field value...',
 							},
 						],
@@ -1394,7 +1394,7 @@ export class blue implements INodeType {
 				default: 'MEMBER',
 			},
 			{
-				displayName: 'Custom Role',
+				displayName: 'Custom Role Name or ID',
 				name: 'customRoleId',
 				type: 'options',
 				displayOptions: {
@@ -1848,7 +1848,7 @@ export class blue implements INodeType {
 			if (!actualCompanyId) {
 				return {
 					results: [{
-						name: 'Please select a company first',
+						name: 'Please Select a Company First',
 						value: '',
 					}]
 				};
@@ -2957,7 +2957,7 @@ export class blue implements INodeType {
 
 			if (!actualCompanyId || actualCompanyId.trim() === '') {
 				return [{
-					name: 'Please select a company first',
+					name: 'Please Select a Company First',
 					value: '',
 				}];
 			}
@@ -3056,7 +3056,7 @@ export class blue implements INodeType {
 
 		if (!companyValue || !projectValue) {
 			return [{
-				name: 'Please select Company and Project first',
+				name: 'Please Select Company and Project First',
 				value: '',
 			}];
 		}
