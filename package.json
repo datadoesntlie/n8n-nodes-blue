@@ -14,17 +14,17 @@
     "projects"
   ],
   "license": "MIT",
-  "homepage": "https://github.com/datadoesntlie/blue#readme",
+  "homepage": "https://github.com/datadoesntlie/n8n-nodes-blue#readme",
   "author": {
     "name": "Ana Avendano",
     "email": "ask@anaknowseverything.com"
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/datadoesntlie/blue"
+    "url": "https://github.com/datadoesntlie/n8n-nodes-blue.git"
   },
   "bugs": {
-    "url": "https://github.com/datadoesntlie/blue/issues"
+    "url": "https://github.com/datadoesntlie/n8n-nodes-blue/issues"
   },
   "engines": {
     "node": ">=18.17.0"

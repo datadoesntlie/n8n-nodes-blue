@@ -259,7 +259,7 @@ query GetProjectStats($projectId: ID!) {
 
 - **Blue API Issues**: Refer to [Blue API Documentation](https://www.blue.cc/en/api/start-guide/introduction)
 - **n8n Node Issues**: Check [n8n Community](https://community.n8n.io/)
-- **Bug Reports**: Submit issues to the [GitHub repository](https://github.com/datadoesntlie/blue/issues)
+- **Bug Reports**: Submit issues to the [GitHub repository](https://github.com/datadoesntlie/n8n-nodes-blue/issues)
 
 ### Debug Tips
 
@@ -274,7 +274,7 @@ query GetProjectStats($projectId: ID!) {
 * [n8n community nodes documentation](https://docs.n8n.io/integrations/#community-nodes)
 * [Blue API Documentation](https://www.blue.cc/en/api/start-guide/introduction) - Official API guide and reference
 * [Blue GraphQL Schema](https://api.blue.cc/graphql) - Interactive GraphQL playground
-* [GitHub Repository](https://github.com/datadoesntlie/blue) - Source code and issue tracking
+* [GitHub Repository](https://github.com/datadoesntlie/n8n-nodes-blue) - Source code and issue tracking
 
 ## License
 
