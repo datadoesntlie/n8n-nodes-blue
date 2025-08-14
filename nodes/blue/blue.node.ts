@@ -55,28 +55,28 @@ export class blue implements INodeType {
 						action: 'Create a new record todo task with custom fields',
 					},
 					{
-						name: 'Custom Query',
+						name: 'Execute Custom GraphQL',
 						value: 'customQuery',
 						description: 'Execute a custom GraphQL query',
-						action: 'Execute a custom graph ql query',
+						action: 'Execute a custom GraphQL query',
 					},
 					{
-						name: 'Get Companies',
+						name: 'List Companies',
 						value: 'getCompanies',
 						description: 'List all companies you have access to',
 						action: 'List all companies you have access to',
 					},
 					{
-						name: 'Get Projects',
+						name: 'List Projects',
 						value: 'getProjects',
 						description: 'Retrieve projects from a company',
-						action: 'Retrieve projects from a company',
+						action: 'List projects from a company',
 					},
 					{
 						name: 'Get Records',
 						value: 'getRecords',
 						description: 'Retrieve records (todos/tasks) with advanced filtering',
-						action: 'Retrieve records todos tasks with advanced filtering',
+						action: 'Get records with advanced filtering',
 					},
 					{
 						name: 'Tag Record',
@@ -93,8 +93,8 @@ export class blue implements INodeType {
 					{
 						name: 'Invite User',
 						value: 'inviteUser',
-						description: 'Invite a user to a project with specified role',
-						action: 'Invite a user to a project with specified role',
+						description: 'Invite User to a Project',
+						action: 'Invite a user to a project',
 					},
 					{
 						name: 'List Custom Fields',
