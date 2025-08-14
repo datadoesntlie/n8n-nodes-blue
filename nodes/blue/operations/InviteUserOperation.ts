@@ -97,10 +97,18 @@ export class InviteUserOperation extends BaseBlueOperation {
 	}
 
 	private buildInviteUserMutation(email: string, companyId: string, projectId: string, accessLevel: string, roleId?: string): string {
+		// Ensure project ID is properly formatted as URL slug and not empty
+		const projectSlug = projectId.trim();
+		
+		// Validate that we have a specific project ID to prevent company-wide invitations
+		if (!projectSlug || projectSlug === '' || projectSlug === 'undefined') {
+			throw new Error('Project ID is required and cannot be empty. Please select a specific project.');
+		}
+		
 		const inputs = [
 			`email: "${email}"`,
 			`companyId: "${companyId}"`,
-			`projectId: "${projectId}"`
+			`projectIds: "${projectSlug}"`  // Changed from projectId to projectIds
 		];
 
 		// Use the actual role value if it's not CUSTOM_ROLE
@@ -109,12 +117,14 @@ export class InviteUserOperation extends BaseBlueOperation {
 		} else {
 			// For custom roles, use MEMBER as accessLevel and add roleId
 			inputs.push(`accessLevel: MEMBER`);
-			if (roleId) {
-				inputs.push(`roleId: "${roleId}"`);
-			}
+		}
+		
+		// Always add roleId if provided (for custom roles)
+		if (roleId && roleId.trim()) {
+			inputs.push(`roleId: "${roleId.trim()}"`);
 		}
 
-		return `mutation InviteUserToProject {
+		return `mutation InviteUserWithCustomRole {
 			inviteUser(
 				input: {
 					${inputs.join('\n\t\t\t\t\t')}
