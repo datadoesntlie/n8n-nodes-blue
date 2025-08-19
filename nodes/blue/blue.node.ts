@@ -1396,8 +1396,8 @@ export class Blue implements INodeType {
 
 	async getProjectTemplates(this: ILoadOptionsFunctions): Promise<INodePropertyOptions[]> {
 		try {
-			// Try to get the company ID using getCurrentNodeParameter like getCustomRoles does
-			const companyIdParam = this.getCurrentNodeParameter('companyId') as any;
+			// Try to get the company ID using getNodeParameter
+			const companyIdParam = this.getNodeParameter('companyId') as any;
 			
 			// Extract company ID from resourceLocator format
 			let actualCompanyId = '';
@@ -1487,8 +1487,8 @@ export class Blue implements INodeType {
 		const credentials = await this.getCredentials('blueApi');
 		
 		// Get companyId and projectId from current parameters
-		const companyId = this.getCurrentNodeParameter('companyId') as any;
-		const projectId = this.getCurrentNodeParameter('projectId') as any;
+		const companyId = this.getNodeParameter('companyId') as any;
+		const projectId = this.getNodeParameter('projectId') as any;
 		
 		// Extract values from resourceLocator format
 		let companyValue = '';
