@@ -1,24 +1,4 @@
-import { INodeTypeDescription, NodeConnectionType } from 'n8n-workflow';
-
-export const blueDescription: INodeTypeDescription = {
-	displayName: 'Blue',
-	name: 'blue',
-	icon: 'file:blue.svg',
-	group: ['transform'],
-	version: 1,
-	description: 'Interact with Blue Project Management via GraphQL API',
-	defaults: {
-		name: 'Blue',
-	},
-	inputs: ['main'] as NodeConnectionType[],
-	outputs: ['main'] as NodeConnectionType[],
-	credentials: [
-		{
-			name: 'blueApi',
-			required: true,
-		},
-	],
-	properties: [
+export const properties = [
 		{
 			displayName: 'Operation',
 			name: 'operation',
@@ -1568,5 +1548,4 @@ export const blueDescription: INodeTypeDescription = {
 				},
 			],
 		},
-	],
-};
+	];

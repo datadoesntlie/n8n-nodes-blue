@@ -7,16 +7,38 @@ import {
 	INodeListSearchResult,
 	INodePropertyOptions,
 	INodeType,
+	INodeTypeDescription,
+	INodeProperties,
+	NodeConnectionType,
 	NodeApiError,
 	NodeOperationError,
 } from 'n8n-workflow';
 
 import { operations } from './operations';
 import { BlueCredentials, BlueOperationContext } from './types';
-import { blueDescription } from './descriptions/Blue.description';
+import { properties } from './descriptions/description';
 
-export class blue implements INodeType {
-	description = blueDescription;
+export class Blue implements INodeType {
+	description: INodeTypeDescription = {
+		displayName: 'Blue',
+		name: 'blue',
+		icon: 'file:blue.svg',
+		group: ['transform'],
+		version: 1,
+		description: 'Interact with Blue Project Management via GraphQL API',
+		defaults: {
+			name: 'Blue',
+		},
+		inputs: ['main'] as NodeConnectionType[],
+		outputs: ['main'] as NodeConnectionType[],
+		credentials: [
+			{
+				name: 'blueApi',
+				required: true,
+			},
+		],
+		properties: properties as INodeProperties[],
+	};
 
 	methods = {
 		listSearch: {

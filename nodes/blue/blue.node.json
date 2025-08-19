@@ -1,4 +1,4 @@
 {
-	"node": "dist/nodes/blue/blue.node.js",
+	"node": "dist/nodes/blue/Blue.node.js",
 	"credentials": "dist/credentials/blueapi.credentials.js"
 }
