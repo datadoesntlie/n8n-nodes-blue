@@ -161,7 +161,7 @@ export class Blue implements INodeType {
 				json: true,
 			};
 
-			const response = await this.helpers.request(requestOptions);
+			const response = await this.helpers.httpRequest(requestOptions);
 
 			if (response.errors && response.errors.length > 0) {
 				const errorMessage = response.errors.map((err: any) => err.message).join(', ');
@@ -256,7 +256,7 @@ export class Blue implements INodeType {
 				json: true,
 			};
 
-			const response = await this.helpers.request(requestOptions);
+			const response = await this.helpers.httpRequest(requestOptions);
 
 			if (response.errors && response.errors.length > 0) {
 				const errorMessage = response.errors.map((err: any) => err.message).join(', ');
@@ -353,7 +353,7 @@ export class Blue implements INodeType {
 				json: true,
 			};
 
-			const response = await this.helpers.request(requestOptions);
+			const response = await this.helpers.httpRequest(requestOptions);
 
 			if (response.errors && response.errors.length > 0) {
 				const errorMessage = response.errors.map((err: any) => err.message).join(', ');
@@ -449,7 +449,7 @@ export class Blue implements INodeType {
 				json: true,
 			};
 
-			const response = await this.helpers.request(requestOptions);
+			const response = await this.helpers.httpRequest(requestOptions);
 
 			if (response.errors && response.errors.length > 0) {
 				const errorMessage = response.errors.map((err: any) => err.message).join(', ');
@@ -550,7 +550,7 @@ export class Blue implements INodeType {
 				json: true,
 			};
 
-			const response = await this.helpers.request(requestOptions);
+			const response = await this.helpers.httpRequest(requestOptions);
 
 			if (response.errors && response.errors.length > 0) {
 				const errorMessage = response.errors.map((err: any) => err.message).join(', ');
@@ -649,7 +649,7 @@ export class Blue implements INodeType {
 				json: true,
 			};
 
-			const response = await this.helpers.request(requestOptions);
+			const response = await this.helpers.httpRequest(requestOptions);
 
 			if (response.errors && response.errors.length > 0) {
 				const errorMessage = response.errors.map((err: any) => err.message).join(', ');
@@ -752,7 +752,7 @@ export class Blue implements INodeType {
 				json: true,
 			};
 
-			const response = await this.helpers.request(requestOptions);
+			const response = await this.helpers.httpRequest(requestOptions);
 
 			if (response.errors && response.errors.length > 0) {
 				const errorMessage = response.errors.map((err: any) => err.message).join(', ');
@@ -844,7 +844,7 @@ export class Blue implements INodeType {
 				json: true,
 			};
 
-			const response = await this.helpers.request(requestOptions);
+			const response = await this.helpers.httpRequest(requestOptions);
 
 			if (response.errors && response.errors.length > 0) {
 				return [{
@@ -940,7 +940,7 @@ export class Blue implements INodeType {
 				json: true,
 			};
 
-			const response = await this.helpers.request(requestOptions);
+			const response = await this.helpers.httpRequest(requestOptions);
 
 			if (response.errors && response.errors.length > 0) {
 				return [{
@@ -1085,7 +1085,7 @@ export class Blue implements INodeType {
 				json: true,
 			};
 
-			const response = await this.helpers.request(requestOptions);
+			const response = await this.helpers.httpRequest(requestOptions);
 
 			if (response.errors && response.errors.length > 0) {
 				return [{
@@ -1273,7 +1273,7 @@ export class Blue implements INodeType {
 				json: true,
 			};
 
-			const response = await this.helpers.request(requestOptions);
+			const response = await this.helpers.httpRequest(requestOptions);
 			if (response.errors && response.errors.length > 0) {
 				return [{
 					name: 'Error Loading Custom Fields',
@@ -1364,7 +1364,7 @@ export class Blue implements INodeType {
 				json: true,
 			};
 
-			const response = await this.helpers.request(requestOptions);
+			const response = await this.helpers.httpRequest(requestOptions);
 			if (response.errors && response.errors.length > 0) {
 				return [{
 					name: 'Error Loading Options',
@@ -1460,7 +1460,7 @@ export class Blue implements INodeType {
 				json: true,
 			};
 
-			const response = await this.helpers.request(requestOptions);
+			const response = await this.helpers.httpRequest(requestOptions);
 
 			if (response.errors && response.errors.length > 0) {
 				return [{
@@ -1540,7 +1540,7 @@ export class Blue implements INodeType {
 				json: true,
 			};
 
-			const response = await this.helpers.request(requestOptions);
+			const response = await this.helpers.httpRequest(requestOptions);
 
 			if (response.errors && response.errors.length > 0) {
 				return [{

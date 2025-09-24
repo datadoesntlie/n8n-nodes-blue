@@ -68,6 +68,7 @@ export const properties = [
 			],
 			default: 'getCompanies',
 		},
+		// SHARED COMPANY FIELD - Used by ALL operations (except getCompanies)
 		{
 			displayName: 'Company',
 			name: 'companyId',
@@ -75,11 +76,11 @@ export const properties = [
 			default: { mode: 'list', value: '' },
 			displayOptions: {
 				show: {
-					operation: ['getProjects'],
+					operation: ['getProjects', 'getRecords', 'updateRecord', 'tagRecord', 'createRecord', 'createProject', 'inviteUser', 'listCustomFields'],
 				},
 			},
 			required: true,
-			description: 'Company to retrieve projects from',
+			description: 'Company containing the records/projects',
 			modes: [
 				{
 					displayName: 'From List',
@@ -108,19 +109,45 @@ export const properties = [
 				},
 			],
 		},
+		// SHARED PROJECT FIELD - Used by operations that need projects
 		{
-			displayName: 'Company',
-			name: 'companyId',
-			type: 'string',
+			displayName: 'Project',
+			name: 'projectId',
+			type: 'resourceLocator',
+			default: { mode: 'list', value: '' },
 			displayOptions: {
-				hide: {
-					operation: ['getCompanies', 'updateRecord', 'createRecord', 'createProject', 'getProjects', 'getRecords', 'tagRecord', 'inviteUser', 'listCustomFields'],
+				show: {
+					operation: ['getRecords', 'updateRecord', 'tagRecord', 'createRecord', 'inviteUser', 'listCustomFields'],
 				},
 			},
-			default: '',
-			required: true,
-			description: 'Company ID or slug to work with',
-			placeholder: 'e.g., your-company-slug',
+			description: 'Project to work with (optional for getRecords, required for others)',
+			modes: [
+				{
+					displayName: 'From List',
+					name: 'list',
+					type: 'list',
+					placeholder: 'Select a project...',
+					typeOptions: {
+						searchListMethod: 'searchProjects',
+						searchable: true,
+					},
+				},
+				{
+					displayName: 'By ID',
+					name: 'id',
+					type: 'string',
+					placeholder: 'e.g., crm-113',
+					validation: [
+						{
+							type: 'regex',
+							properties: {
+								regex: '.+',
+								errorMessage: 'Project ID cannot be empty',
+							},
+						},
+					],
+				},
+			],
 		},
 		// Tag field moved to correct position later
 		// Custom Query Section
@@ -158,86 +185,7 @@ export const properties = [
 			default: '{}',
 			description: 'Variables to pass to the query as JSON object',
 		},
-		// Get Records Section
-		{
-			displayName: 'Company',
-			name: 'companyId',
-			type: 'resourceLocator',
-			default: { mode: 'list', value: '' },
-			displayOptions: {
-				show: {
-					operation: ['getRecords'],
-				},
-			},
-			required: true,
-			description: 'Company to retrieve records from',
-			modes: [
-				{
-					displayName: 'From List',
-					name: 'list',
-					type: 'list',
-					placeholder: 'Select a company...',
-					typeOptions: {
-						searchListMethod: 'searchCompanies',
-						searchable: true,
-					},
-				},
-				{
-					displayName: 'By ID',
-					name: 'id',
-					type: 'string',
-					placeholder: 'e.g., your-company-slug',
-					validation: [
-						{
-							type: 'regex',
-							properties: {
-								regex: '.+',
-								errorMessage: 'Company ID cannot be empty',
-							},
-						},
-					],
-				},
-			],
-		},
-		{
-			displayName: 'Project',
-			name: 'projectId',
-			type: 'resourceLocator',
-			default: { mode: 'list', value: '' },
-			displayOptions: {
-				show: {
-					operation: ['getRecords'],
-				},
-			},
-			description: 'Project to filter records from (optional)',
-			modes: [
-				{
-					displayName: 'From List',
-					name: 'list',
-					type: 'list',
-					placeholder: 'Select a project...',
-					typeOptions: {
-						searchListMethod: 'searchProjects',
-						searchable: true,
-					},
-				},
-				{
-					displayName: 'By ID',
-					name: 'id',
-					type: 'string',
-					placeholder: 'e.g., crm-113',
-					validation: [
-						{
-							type: 'regex',
-							properties: {
-								regex: '.+',
-								errorMessage: 'Project ID cannot be empty',
-							},
-						},
-					],
-				},
-			],
-		},
+		// Get Records Section - Uses shared company/project fields
 		{
 			displayName: 'Search Term',
 			name: 'searchTerm',
@@ -293,86 +241,7 @@ export const properties = [
 			},
 			description: 'Number of records to skip (for pagination)',
 		},
-		// Update Record Section
-		{
-			displayName: 'Company',
-			name: 'companyId',
-			type: 'resourceLocator',
-			default: { mode: 'list', value: '' },
-			displayOptions: {
-				show: {
-					operation: ['updateRecord', 'tagRecord'],
-				},
-			},
-			required: true,
-			description: 'Company containing the record',
-			modes: [
-				{
-					displayName: 'From List',
-					name: 'list',
-					type: 'list',
-					placeholder: 'Select a company...',
-					typeOptions: {
-						searchListMethod: 'searchCompanies',
-						searchable: true,
-					},
-				},
-				{
-					displayName: 'By ID',
-					name: 'id',
-					type: 'string',
-					placeholder: 'e.g., ana',
-					validation: [
-						{
-							type: 'regex',
-							properties: {
-								regex: '.+',
-								errorMessage: 'Company ID cannot be empty',
-							},
-						},
-					],
-				},
-			],
-		},
-		{
-			displayName: 'Project',
-			name: 'projectId',
-			type: 'resourceLocator',
-			default: { mode: 'list', value: '' },
-			displayOptions: {
-				show: {
-					operation: ['updateRecord', 'tagRecord'],
-				},
-			},
-			description: 'Project containing the record (required for tagRecord)',
-			modes: [
-				{
-					displayName: 'From List',
-					name: 'list',
-					type: 'list',
-					placeholder: 'Select a project...',
-					typeOptions: {
-						searchListMethod: 'searchProjects',
-						searchable: true,
-					},
-				},
-				{
-					displayName: 'By ID',
-					name: 'id',
-					type: 'string',
-					placeholder: 'e.g., crm-113',
-					validation: [
-						{
-							type: 'regex',
-							properties: {
-								regex: '.+',
-								errorMessage: 'Project ID cannot be empty',
-							},
-						},
-					],
-				},
-			],
-		},
+		// Update Record Section - Uses shared company/project fields
 		{
 			displayName: 'Todo List',
 			name: 'todoListId',
@@ -427,6 +296,7 @@ export const properties = [
 			default: [],
 			typeOptions: {
 				loadOptionsMethod: 'getProjectTags',
+				loadOptionsDependsOn: ['companyId', 'projectId'],
 			},
 		},
 		{
@@ -782,85 +652,7 @@ export const properties = [
 			},
 			description: 'Select multiple options for SELECT_MULTI fields. Choose from the list, or specify IDs using an <a href="https://docs.n8n.io/code/expressions/">expression</a>.',
 		},
-		// Create Record Section  
-		{
-			displayName: 'Company',
-			name: 'companyId',
-			type: 'resourceLocator',
-			default: { mode: 'list', value: '' },
-			displayOptions: {
-				show: {
-					operation: ['createRecord'],
-				},
-			},
-			required: true,
-			description: 'Company where the record will be created',
-			modes: [
-				{
-					displayName: 'From List',
-					name: 'list',
-					type: 'list',
-					placeholder: 'Select a company...',
-					typeOptions: {
-						searchListMethod: 'searchCompanies',
-						searchable: true,
-					},
-				},
-				{
-					displayName: 'By ID',
-					name: 'id',
-					type: 'string',
-					validation: [
-						{
-							type: 'regex',
-							properties: {
-								regex: '.+',
-								errorMessage: 'Company ID cannot be empty',
-							},
-						},
-					],
-				},
-			],
-		},
-		{
-			displayName: 'Project',
-			name: 'projectId',
-			type: 'resourceLocator',
-			default: { mode: 'list', value: '' },
-			displayOptions: {
-				show: {
-					operation: ['createRecord'],
-				},
-			},
-			required: true,
-			description: 'Project where the record will be created',
-			modes: [
-				{
-					displayName: 'From List',
-					name: 'list',
-					type: 'list',
-					placeholder: 'Select a project...',
-					typeOptions: {
-						searchListMethod: 'searchProjects',
-						searchable: true,
-					},
-				},
-				{
-					displayName: 'By ID',
-					name: 'id',
-					type: 'string',
-					validation: [
-						{
-							type: 'regex',
-							properties: {
-								regex: '.+',
-								errorMessage: 'Project ID cannot be empty',
-							},
-						},
-					],
-				},
-			],
-		},
+		// Create Record Section - Uses shared company/project fields
 		{
 			displayName: 'Todo List',
 			name: 'todoListId',
@@ -1117,46 +909,7 @@ export const properties = [
 			],
 			description: 'Checklists to create for this record',
 		},
-		// Create Project Section
-		{
-			displayName: 'Company',
-			name: 'companyId',
-			type: 'resourceLocator',
-			default: { mode: 'list', value: '' },
-			displayOptions: {
-				show: {
-					operation: ['createProject'],
-				},
-			},
-			required: true,
-			description: 'Company where the project will be created',
-			modes: [
-				{
-					displayName: 'From List',
-					name: 'list',
-					type: 'list',
-					placeholder: 'Select a company...',
-					typeOptions: {
-						searchListMethod: 'searchCompanies',
-						searchable: true,
-					},
-				},
-				{
-					displayName: 'By ID',
-					name: 'id',
-					type: 'string',
-					validation: [
-						{
-							type: 'regex',
-							properties: {
-								regex: '.+',
-								errorMessage: 'Company ID cannot be empty',
-							},
-						},
-					],
-				},
-			],
-		},
+		// Create Project Section - Uses shared company field
 		{
 			displayName: 'Project Name',
 			name: 'name',
@@ -1211,87 +964,7 @@ export const properties = [
 				},
 			],
 		},
-		// Invite User Section
-		{
-			displayName: 'Company',
-			name: 'companyId',
-			type: 'resourceLocator',
-			default: { mode: 'list', value: '' },
-			displayOptions: {
-				show: {
-					operation: ['inviteUser'],
-				},
-			},
-			required: true,
-			description: 'Company where the project is located',
-			modes: [
-				{
-					displayName: 'From List',
-					name: 'list',
-					type: 'list',
-					placeholder: 'Select a company...',
-					typeOptions: {
-						searchListMethod: 'searchCompanies',
-						searchable: true,
-					},
-				},
-				{
-					displayName: 'By ID',
-					name: 'id',
-					type: 'string',
-					placeholder: 'e.g., ana',
-					validation: [
-						{
-							type: 'regex',
-							properties: {
-								regex: '.+',
-								errorMessage: 'Company ID cannot be empty',
-							},
-						},
-					],
-				},
-			],
-		},
-		{
-			displayName: 'Project',
-			name: 'projectId',
-			type: 'resourceLocator',
-			default: { mode: 'list', value: '' },
-			displayOptions: {
-				show: {
-					operation: ['inviteUser'],
-				},
-			},
-			required: true,
-			description: 'Project to invite the user to',
-			modes: [
-				{
-					displayName: 'From List',
-					name: 'list',
-					type: 'list',
-					placeholder: 'Select a project...',
-					typeOptions: {
-						searchListMethod: 'searchProjects',
-						searchable: true,
-					},
-				},
-				{
-					displayName: 'By ID',
-					name: 'id',
-					type: 'string',
-					placeholder: 'e.g., project-123',
-					validation: [
-						{
-							type: 'regex',
-							properties: {
-								regex: '.+',
-								errorMessage: 'Project ID cannot be empty',
-							},
-						},
-					],
-				},
-			],
-		},
+		// Invite User Section - Uses shared company/project fields
 		{
 			displayName: 'Email',
 			name: 'email',
@@ -1374,87 +1047,7 @@ export const properties = [
 			},
 			default: '',
 		},
-		// List Custom Fields Section
-		{
-			displayName: 'Company',
-			name: 'companyId',
-			type: 'resourceLocator',
-			default: { mode: 'list', value: '' },
-			displayOptions: {
-				show: {
-					operation: ['listCustomFields'],
-				},
-			},
-			required: true,
-			description: 'Company where the project is located',
-			modes: [
-				{
-					displayName: 'From List',
-					name: 'list',
-					type: 'list',
-					placeholder: 'Select a company...',
-					typeOptions: {
-						searchListMethod: 'searchCompanies',
-						searchable: true,
-					},
-				},
-				{
-					displayName: 'By ID',
-					name: 'id',
-					type: 'string',
-					placeholder: 'e.g., ana',
-					validation: [
-						{
-							type: 'regex',
-							properties: {
-								regex: '.+',
-								errorMessage: 'Company ID cannot be empty',
-							},
-						},
-					],
-				},
-			],
-		},
-		{
-			displayName: 'Project',
-			name: 'projectId',
-			type: 'resourceLocator',
-			default: { mode: 'list', value: '' },
-			displayOptions: {
-				show: {
-					operation: ['listCustomFields'],
-				},
-			},
-			required: true,
-			description: 'Project to list custom fields from',
-			modes: [
-				{
-					displayName: 'From List',
-					name: 'list',
-					type: 'list',
-					placeholder: 'Select a project...',
-					typeOptions: {
-						searchListMethod: 'searchProjects',
-						searchable: true,
-					},
-				},
-				{
-					displayName: 'By ID',
-					name: 'id',
-					type: 'string',
-					placeholder: 'e.g., project-123',
-					validation: [
-						{
-							type: 'regex',
-							properties: {
-								regex: '.+',
-								errorMessage: 'Project ID cannot be empty',
-							},
-						},
-					],
-				},
-			],
-		},
+		// List Custom Fields Section - Uses shared company/project fields
 		{
 			displayName: 'Sort Order',
 			name: 'sortOrder',

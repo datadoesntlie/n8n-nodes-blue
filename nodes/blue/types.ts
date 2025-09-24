@@ -76,7 +76,7 @@ export abstract class BaseBlueOperation {
 			requestOptions.headers['X-Bloo-Project-ID'] = projectId;
 		}
 
-		return await context.executeFunctions.helpers.request(requestOptions);
+		return await context.executeFunctions.helpers.httpRequest(requestOptions);
 	}
 
 	protected handleGraphQLResponse(response: any, fullResponse: boolean = false): any {
