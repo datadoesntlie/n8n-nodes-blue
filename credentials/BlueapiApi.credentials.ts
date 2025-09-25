@@ -2,6 +2,7 @@ import {
 	ICredentialType,
 	INodeProperties,
 	ICredentialTestRequest,
+	IAuthenticate,
 } from 'n8n-workflow';
 
 export class BlueapiApi implements ICredentialType {
@@ -41,6 +42,16 @@ export class BlueapiApi implements ICredentialType {
 			description: 'Base URL for the Blue API endpoint',
 		},
 	];
+
+	authenticate: IAuthenticate = {
+		type: 'generic',
+		properties: {
+			headers: {
+				'X-Bloo-Token-ID': '={{$credentials.tokenId}}',
+				'X-Bloo-Token-Secret': '={{$credentials.tokenSecret}}',
+			},
+		},
+	};
 
 	// Optional: Add credential testing
 	test: ICredentialTestRequest = {

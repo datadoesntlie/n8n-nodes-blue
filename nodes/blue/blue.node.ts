@@ -15,7 +15,7 @@ import {
 } from 'n8n-workflow';
 
 import { operations } from './operations';
-import { BlueCredentials, BlueOperationContext } from './types';
+import { BlueOperationContext } from './types';
 import { properties } from './descriptions/description';
 
 export class Blue implements INodeType {
@@ -68,7 +68,6 @@ export class Blue implements INodeType {
 			try {
 				const operation = this.getNodeParameter('operation', i) as string;
 				const additionalOptions = this.getNodeParameter('additionalOptions', i) as IDataObject;
-				const credentials = await this.getCredentials('blueApi') as BlueCredentials;
 
 				// Get the operation handler
 				const operationHandler = operations[operation];
@@ -80,7 +79,6 @@ export class Blue implements INodeType {
 				const context: BlueOperationContext = {
 					executeFunctions: this,
 					itemIndex: i,
-					credentials,
 					additionalOptions,
 				};
 
@@ -131,8 +129,6 @@ export class Blue implements INodeType {
 	// Resource locator methods for dynamic dropdowns
 	async searchCompanies(this: ILoadOptionsFunctions, filter?: string): Promise<INodeListSearchResult> {
 		try {
-			const credentials = await this.getCredentials('blueApi') as BlueCredentials;
-			
 			// Use the same query as GetCompaniesOperation
 			const query = `query GetCompanies {
 				companyList {
@@ -150,8 +146,6 @@ export class Blue implements INodeType {
 				method: 'POST' as const,
 				url: 'https://api.blue.cc/graphql',
 				headers: {
-					'X-Bloo-Token-ID': credentials.tokenId,
-					'X-Bloo-Token-Secret': credentials.tokenSecret,
 					'Content-Type': 'application/json',
 				},
 				body: {
@@ -161,7 +155,7 @@ export class Blue implements INodeType {
 				json: true,
 			};
 
-			const response = await this.helpers.httpRequest(requestOptions);
+			const response = await this.helpers.httpRequestWithAuthentication.call(this, 'blueApi', requestOptions);
 
 			if (response.errors && response.errors.length > 0) {
 				const errorMessage = response.errors.map((err: any) => err.message).join(', ');
@@ -211,8 +205,6 @@ export class Blue implements INodeType {
 				};
 			}
 
-			const credentials = await this.getCredentials('blueApi') as BlueCredentials;
-			
 			// Use the same query as GetProjectsOperation
 			const query = `query FilteredProjectList {
 				projectList(
@@ -244,8 +236,6 @@ export class Blue implements INodeType {
 				method: 'POST' as const,
 				url: 'https://api.blue.cc/graphql',
 				headers: {
-					'X-Bloo-Token-ID': credentials.tokenId,
-					'X-Bloo-Token-Secret': credentials.tokenSecret,
 					'Content-Type': 'application/json',
 					'X-Bloo-Company-ID': actualCompanyId,
 				},
@@ -256,7 +246,7 @@ export class Blue implements INodeType {
 				json: true,
 			};
 
-			const response = await this.helpers.httpRequest(requestOptions);
+			const response = await this.helpers.httpRequestWithAuthentication.call(this, 'blueApi', requestOptions);
 
 			if (response.errors && response.errors.length > 0) {
 				const errorMessage = response.errors.map((err: any) => err.message).join(', ');
@@ -306,8 +296,7 @@ export class Blue implements INodeType {
 				};
 			}
 
-			const credentials = await this.getCredentials('blueApi') as BlueCredentials;
-
+			
 			const query = `query SearchProjectTemplates {
 				projectList(
 					filter: {
@@ -340,9 +329,7 @@ export class Blue implements INodeType {
 				method: 'POST' as const,
 				url: 'https://api.blue.cc/graphql',
 				headers: {
-					'X-Bloo-Token-ID': credentials.tokenId,
-					'X-Bloo-Token-Secret': credentials.tokenSecret,
-					'X-Bloo-Company-ID': actualCompanyId,
+										'X-Bloo-Company-ID': actualCompanyId,
 					'Content-Type': 'application/json',
 					'User-Agent': 'n8n-blue-node/1.0',
 				},
@@ -353,7 +340,7 @@ export class Blue implements INodeType {
 				json: true,
 			};
 
-			const response = await this.helpers.httpRequest(requestOptions);
+			const response = await this.helpers.httpRequestWithAuthentication.call(this, 'blueApi', requestOptions);
 
 			if (response.errors && response.errors.length > 0) {
 				const errorMessage = response.errors.map((err: any) => err.message).join(', ');
@@ -417,8 +404,7 @@ export class Blue implements INodeType {
 				};
 			}
 
-			const credentials = await this.getCredentials('blueApi') as BlueCredentials;
-			
+						
 			// Use the provided query for getting Todo Lists
 			const query = `query GetProjectLists {
 				todoLists(projectId: "${actualProjectId}") {
@@ -437,9 +423,7 @@ export class Blue implements INodeType {
 				method: 'POST' as const,
 				url: 'https://api.blue.cc/graphql',
 				headers: {
-					'X-Bloo-Token-ID': credentials.tokenId,
-					'X-Bloo-Token-Secret': credentials.tokenSecret,
-					'Content-Type': 'application/json',
+										'Content-Type': 'application/json',
 					'X-Bloo-Company-ID': actualCompanyId,
 				},
 				body: {
@@ -449,7 +433,7 @@ export class Blue implements INodeType {
 				json: true,
 			};
 
-			const response = await this.helpers.httpRequest(requestOptions);
+			const response = await this.helpers.httpRequestWithAuthentication.call(this, 'blueApi', requestOptions);
 
 			if (response.errors && response.errors.length > 0) {
 				const errorMessage = response.errors.map((err: any) => err.message).join(', ');
@@ -520,8 +504,7 @@ export class Blue implements INodeType {
 				};
 			}
 
-			const credentials = await this.getCredentials('blueApi') as BlueCredentials;
-			
+						
 			// Use the provided query for getting project users
 			const query = `query GetProjectUsers {
 				projectUserList(projectId: "${actualProjectId}") {
@@ -538,9 +521,7 @@ export class Blue implements INodeType {
 				method: 'POST' as const,
 				url: 'https://api.blue.cc/graphql',
 				headers: {
-					'X-Bloo-Token-ID': credentials.tokenId,
-					'X-Bloo-Token-Secret': credentials.tokenSecret,
-					'Content-Type': 'application/json',
+										'Content-Type': 'application/json',
 					'User-Agent': 'n8n-blue-node/1.0',
 				},
 				body: {
@@ -550,7 +531,7 @@ export class Blue implements INodeType {
 				json: true,
 			};
 
-			const response = await this.helpers.httpRequest(requestOptions);
+			const response = await this.helpers.httpRequestWithAuthentication.call(this, 'blueApi', requestOptions);
 
 			if (response.errors && response.errors.length > 0) {
 				const errorMessage = response.errors.map((err: any) => err.message).join(', ');
@@ -619,8 +600,7 @@ export class Blue implements INodeType {
 				};
 			}
 
-			const credentials = await this.getCredentials('blueApi') as BlueCredentials;
-			
+						
 			// Use the provided query for getting project tags
 			const query = `query ListOfTagsWithinProjects {
 				tagList(filter: { projectIds: ["${actualProjectId}"], excludeArchivedProjects: false }) {
@@ -637,9 +617,7 @@ export class Blue implements INodeType {
 				method: 'POST' as const,
 				url: 'https://api.blue.cc/graphql',
 				headers: {
-					'X-Bloo-Token-ID': credentials.tokenId,
-					'X-Bloo-Token-Secret': credentials.tokenSecret,
-					'Content-Type': 'application/json',
+										'Content-Type': 'application/json',
 					'User-Agent': 'n8n-blue-node/1.0',
 				},
 				body: {
@@ -649,7 +627,7 @@ export class Blue implements INodeType {
 				json: true,
 			};
 
-			const response = await this.helpers.httpRequest(requestOptions);
+			const response = await this.helpers.httpRequestWithAuthentication.call(this, 'blueApi', requestOptions);
 
 			if (response.errors && response.errors.length > 0) {
 				const errorMessage = response.errors.map((err: any) => err.message).join(', ');
@@ -717,8 +695,7 @@ export class Blue implements INodeType {
 				};
 			}
 
-			const credentials = await this.getCredentials('blueApi') as BlueCredentials;
-			
+						
 			// Use the provided query for getting custom fields
 			const query = `query ListCustomFields {
 				customFields(
@@ -739,9 +716,7 @@ export class Blue implements INodeType {
 				method: 'POST' as const,
 				url: 'https://api.blue.cc/graphql',
 				headers: {
-					'X-Bloo-Token-ID': credentials.tokenId,
-					'X-Bloo-Token-Secret': credentials.tokenSecret,
-					'Content-Type': 'application/json',
+										'Content-Type': 'application/json',
 					'User-Agent': 'n8n-blue-node/1.0',
 					'X-Bloo-Company-ID': actualCompanyId,
 				},
@@ -752,7 +727,7 @@ export class Blue implements INodeType {
 				json: true,
 			};
 
-			const response = await this.helpers.httpRequest(requestOptions);
+			const response = await this.helpers.httpRequestWithAuthentication.call(this, 'blueApi', requestOptions);
 
 			if (response.errors && response.errors.length > 0) {
 				const errorMessage = response.errors.map((err: any) => err.message).join(', ');
@@ -815,8 +790,7 @@ export class Blue implements INodeType {
 				}];
 			}
 
-			const credentials = await this.getCredentials('blueApi') as BlueCredentials;
-			
+						
 			const query = `query GetProjectUsers {
 				projectUserList(projectId: "${actualProjectId}") {
 					users {
@@ -832,9 +806,7 @@ export class Blue implements INodeType {
 				method: 'POST' as const,
 				url: 'https://api.blue.cc/graphql',
 				headers: {
-					'X-Bloo-Token-ID': credentials.tokenId,
-					'X-Bloo-Token-Secret': credentials.tokenSecret,
-					'Content-Type': 'application/json',
+										'Content-Type': 'application/json',
 					'User-Agent': 'n8n-blue-node/1.0',
 				},
 				body: {
@@ -844,7 +816,7 @@ export class Blue implements INodeType {
 				json: true,
 			};
 
-			const response = await this.helpers.httpRequest(requestOptions);
+			const response = await this.helpers.httpRequestWithAuthentication.call(this, 'blueApi', requestOptions);
 
 			if (response.errors && response.errors.length > 0) {
 				return [{
@@ -895,8 +867,7 @@ export class Blue implements INodeType {
 				}];
 			}
 
-			const credentials = await this.getCredentials('blueApi') as BlueCredentials;
-			
+						
 			const query = `query ListTags {
 				tagList(
 					filter: { 
@@ -927,9 +898,7 @@ export class Blue implements INodeType {
 				method: 'POST' as const,
 				url: 'https://api.blue.cc/graphql',
 				headers: {
-					'X-Bloo-Token-ID': credentials.tokenId,
-					'X-Bloo-Token-Secret': credentials.tokenSecret,
-					'Content-Type': 'application/json',
+										'Content-Type': 'application/json',
 					'User-Agent': 'n8n-blue-node/1.0',
 					'X-Bloo-Company-ID': actualCompanyId,
 				},
@@ -940,7 +909,7 @@ export class Blue implements INodeType {
 				json: true,
 			};
 
-			const response = await this.helpers.httpRequest(requestOptions);
+			const response = await this.helpers.httpRequestWithAuthentication.call(this, 'blueApi', requestOptions);
 
 			if (response.errors && response.errors.length > 0) {
 				return [{
@@ -991,8 +960,7 @@ export class Blue implements INodeType {
 				}];
 			}
 
-			const credentials = await this.getCredentials('blueApi') as BlueCredentials;
-			
+						
 			// Build query based on whether project is selected
 			let query;
 			if (actualProjectId) {
@@ -1072,9 +1040,7 @@ export class Blue implements INodeType {
 				method: 'POST' as const,
 				url: 'https://api.blue.cc/graphql',
 				headers: {
-					'X-Bloo-Token-ID': credentials.tokenId,
-					'X-Bloo-Token-Secret': credentials.tokenSecret,
-					'Content-Type': 'application/json',
+										'Content-Type': 'application/json',
 					'User-Agent': 'n8n-blue-node/1.0',
 					'X-Bloo-Company-ID': actualCompanyId,
 				},
@@ -1085,7 +1051,7 @@ export class Blue implements INodeType {
 				json: true,
 			};
 
-			const response = await this.helpers.httpRequest(requestOptions);
+			const response = await this.helpers.httpRequestWithAuthentication.call(this, 'blueApi', requestOptions);
 
 			if (response.errors && response.errors.length > 0) {
 				return [{
@@ -1199,8 +1165,7 @@ export class Blue implements INodeType {
 				}];
 			}
 
-			const credentials = await this.getCredentials('blueApi') as BlueCredentials;
-			
+						
 			// Build query based on whether project is selected
 			let query;
 			if (actualProjectId) {
@@ -1261,9 +1226,7 @@ export class Blue implements INodeType {
 				method: 'POST' as const,
 				url: 'https://api.blue.cc/graphql',
 				headers: {
-					'X-Bloo-Token-ID': credentials.tokenId,
-					'X-Bloo-Token-Secret': credentials.tokenSecret,
-					'Content-Type': 'application/json',
+										'Content-Type': 'application/json',
 					'X-Bloo-Company-ID': actualCompanyId,
 				},
 				body: {
@@ -1273,7 +1236,7 @@ export class Blue implements INodeType {
 				json: true,
 			};
 
-			const response = await this.helpers.httpRequest(requestOptions);
+			const response = await this.helpers.httpRequestWithAuthentication.call(this, 'blueApi', requestOptions);
 			if (response.errors && response.errors.length > 0) {
 				return [{
 					name: 'Error Loading Custom Fields',
@@ -1333,8 +1296,7 @@ export class Blue implements INodeType {
 				}];
 			}
 
-			const credentials = await this.getCredentials('blueApi') as BlueCredentials;
-			
+						
 			const query = `query GetCustomFieldOptions {
 				customField(id: "${customFieldId}") {
 					id
@@ -1352,9 +1314,7 @@ export class Blue implements INodeType {
 				method: 'POST' as const,
 				url: 'https://api.blue.cc/graphql',
 				headers: {
-					'X-Bloo-Token-ID': credentials.tokenId,
-					'X-Bloo-Token-Secret': credentials.tokenSecret,
-					'Content-Type': 'application/json',
+										'Content-Type': 'application/json',
 					'X-Bloo-Company-ID': actualCompanyId,
 				},
 				body: {
@@ -1364,7 +1324,7 @@ export class Blue implements INodeType {
 				json: true,
 			};
 
-			const response = await this.helpers.httpRequest(requestOptions);
+			const response = await this.helpers.httpRequestWithAuthentication.call(this, 'blueApi', requestOptions);
 			if (response.errors && response.errors.length > 0) {
 				return [{
 					name: 'Error Loading Options',
@@ -1414,8 +1374,7 @@ export class Blue implements INodeType {
 				}];
 			}
 
-			const credentials = await this.getCredentials('blueApi') as BlueCredentials;
-			
+						
 			const query = `query FilteredProjectList {
 				projectList(
 					filter: {
@@ -1447,9 +1406,7 @@ export class Blue implements INodeType {
 				method: 'POST' as const,
 				url: 'https://api.blue.cc/graphql',
 				headers: {
-					'X-Bloo-Token-ID': credentials.tokenId,
-					'X-Bloo-Token-Secret': credentials.tokenSecret,
-					'X-Bloo-Company-ID': actualCompanyId,
+										'X-Bloo-Company-ID': actualCompanyId,
 					'Content-Type': 'application/json',
 					'User-Agent': 'n8n-blue-node/1.0',
 				},
@@ -1460,7 +1417,7 @@ export class Blue implements INodeType {
 				json: true,
 			};
 
-			const response = await this.helpers.httpRequest(requestOptions);
+			const response = await this.helpers.httpRequestWithAuthentication.call(this, 'blueApi', requestOptions);
 
 			if (response.errors && response.errors.length > 0) {
 				return [{
@@ -1484,7 +1441,6 @@ export class Blue implements INodeType {
 	}
 
 	async getCustomRoles(this: ILoadOptionsFunctions): Promise<INodePropertyOptions[]> {
-		const credentials = await this.getCredentials('blueApi');
 		
 		// Get companyId and projectId from current parameters
 		const companyId = this.getNodeParameter('companyId') as any;
@@ -1527,9 +1483,7 @@ export class Blue implements INodeType {
 				method: 'POST' as const,
 				url: 'https://api.blue.cc/graphql',
 				headers: {
-					'X-Bloo-Token-ID': credentials.tokenId,
-					'X-Bloo-Token-Secret': credentials.tokenSecret,
-					'X-Bloo-Company-ID': companyValue,
+										'X-Bloo-Company-ID': companyValue,
 					'Content-Type': 'application/json',
 					'User-Agent': 'n8n-blue-node/1.0',
 				},
@@ -1540,7 +1494,7 @@ export class Blue implements INodeType {
 				json: true,
 			};
 
-			const response = await this.helpers.httpRequest(requestOptions);
+			const response = await this.helpers.httpRequestWithAuthentication.call(this, 'blueApi', requestOptions);
 
 			if (response.errors && response.errors.length > 0) {
 				return [{

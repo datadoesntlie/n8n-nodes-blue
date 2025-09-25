@@ -5,7 +5,6 @@ import {
 	INodeListSearchItems,
 	NodeOperationError,
 } from 'n8n-workflow';
-import { BlueCredentials } from '../types';
 
 export interface GraphQLResponse<T = any> {
 	data?: T;
@@ -29,14 +28,10 @@ export class BlueGraphQLClient {
 		context: ILoadOptionsFunctions,
 		options: GraphQLRequestOptions
 	): Promise<T> {
-		const credentials = await context.getCredentials('blueApi') as BlueCredentials;
-		
 		const requestOptions = {
 			method: 'POST' as const,
 			url: this.API_URL,
 			headers: {
-				'X-Bloo-Token-ID': credentials.tokenId,
-				'X-Bloo-Token-Secret': credentials.tokenSecret,
 				'Content-Type': 'application/json',
 				'User-Agent': this.USER_AGENT,
 				...(options.companyId && { 'X-Bloo-Company-ID': options.companyId }),
@@ -49,7 +44,11 @@ export class BlueGraphQLClient {
 		};
 
 		try {
-			const response: GraphQLResponse<T> = await context.helpers.request(requestOptions);
+			const response: GraphQLResponse<T> = await context.helpers.httpRequestWithAuthentication.call(
+				context,
+				'blueApi',
+				requestOptions
+			);
 
 			if (response.errors && response.errors.length > 0) {
 				const errorMessage = response.errors.map(err => err.message).join(', ');

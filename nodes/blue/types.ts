@@ -1,17 +1,9 @@
 import { IDataObject, IExecuteFunctions } from 'n8n-workflow';
 
-export interface BlueCredentials {
-	tokenId: string;
-	tokenSecret: string;
-	baseUrl: string;
-}
-
 export interface BlueRequestOptions {
 	method: 'POST';
 	url: string;
 	headers: {
-		'X-Bloo-Token-ID': string;
-		'X-Bloo-Token-Secret': string;
 		'Content-Type': string;
 		'User-Agent': string;
 		'X-Bloo-Company-ID'?: string;
@@ -34,7 +26,6 @@ export interface BlueOperationResult {
 export interface BlueOperationContext {
 	executeFunctions: IExecuteFunctions;
 	itemIndex: number;
-	credentials: BlueCredentials;
 	additionalOptions: IDataObject;
 }
 
@@ -51,15 +42,23 @@ export abstract class BaseBlueOperation {
 		companyId?: string,
 		projectId?: string,
 	): Promise<any> {
-		const requestOptions: BlueRequestOptions = {
-			method: 'POST',
+		const additionalHeaders: IDataObject = {
+			'Content-Type': 'application/json',
+			'User-Agent': 'n8n-blue-node/1.0',
+		};
+
+		if (companyId) {
+			additionalHeaders['X-Bloo-Company-ID'] = companyId;
+		}
+
+		if (projectId) {
+			additionalHeaders['X-Bloo-Project-ID'] = projectId;
+		}
+
+		const requestOptions = {
+			method: 'POST' as const,
 			url: 'https://api.blue.cc/graphql',
-			headers: {
-				'X-Bloo-Token-ID': context.credentials.tokenId,
-				'X-Bloo-Token-Secret': context.credentials.tokenSecret,
-				'Content-Type': 'application/json',
-				'User-Agent': 'n8n-blue-node/1.0',
-			},
+			headers: additionalHeaders,
 			body: {
 				query: query.trim(),
 				variables,
@@ -68,15 +67,11 @@ export abstract class BaseBlueOperation {
 			timeout: (context.additionalOptions.timeout as number) || 30000,
 		};
 
-		if (companyId) {
-			requestOptions.headers['X-Bloo-Company-ID'] = companyId;
-		}
-
-		if (projectId) {
-			requestOptions.headers['X-Bloo-Project-ID'] = projectId;
-		}
-
-		return await context.executeFunctions.helpers.httpRequest(requestOptions);
+		return await context.executeFunctions.helpers.httpRequestWithAuthentication.call(
+			context.executeFunctions,
+			'blueApi',
+			requestOptions
+		);
 	}
 
 	protected handleGraphQLResponse(response: any, fullResponse: boolean = false): any {
